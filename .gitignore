@@ -1,0 +1,35 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+.vite/
+
+# Rust build artifacts
+src-tauri/target/
+src-tauri/WixTools/
+src-tauri/gen/
+
+# SQLite database files
+*.db
+*.db-shm
+*.db-wal
+
+# Personal config (use config.example.toml as template)
+config.toml
+
+# Tauri updater keys
+src-tauri/*.key
+src-tauri/*.key.pub
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.idea/
+*.swp
+*.swo

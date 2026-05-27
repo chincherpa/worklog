@@ -1,0 +1,25 @@
+[package]
+name = "tui-log-tauri"
+version = "0.1.0"
+description = "tui-log Tauri App"
+authors = []
+edition = "2021"
+rust-version = "1.77.2"
+
+[lib]
+name = "tui_log_tauri_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-shell = "2"
+tauri-plugin-process = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+rusqlite = { version = "0.31", features = ["bundled"] }
+toml = "0.8"
+chrono = { version = "0.4", features = ["serde"] }
+dirs-next = "2"
