@@ -41,6 +41,7 @@ export interface AppActions {
   setTodoVisible: (v: boolean) => void
   setDialogOpen: (v: boolean) => void
   setInputFocused: (v: boolean) => void
+  setConfig: (config: AppConfig) => void
 }
 
 const INITIAL: AppState = {
@@ -70,15 +71,29 @@ export function useAppState(): AppState & AppActions {
 
   const loadAll = useCallback(async () => {
     const s = stateRef.current
-    if (!s.dbPath) return
+    if (!s.dbPath) {
+      console.warn('loadAll: dbPath empty, skipping')
+      return
+    }
+    console.log('loadAll: calling with dbPath=', s.dbPath)
     try {
-      const [entries, todos, blocks, session] = await Promise.all([
+      const [entriesRes, todosRes, blocksRes, sessionRes] = await Promise.allSettled([
         api.logGetAll(s.dbPath, 'work'),
         api.todoList(s.dbPath, undefined, 'work'),
         api.logGetOpenBlocks(s.dbPath),
         api.sessionGetActive(s.dbPath),
       ])
 
+      if (entriesRes.status === 'rejected') console.error('logGetAll failed:', entriesRes.reason)
+      else console.log('logGetAll ok, count=', entriesRes.value.length)
+      if (todosRes.status === 'rejected') console.error('todoList failed:', todosRes.reason)
+      if (blocksRes.status === 'rejected') console.error('logGetOpenBlocks failed:', blocksRes.reason)
+      if (sessionRes.status === 'rejected') console.error('sessionGetActive failed:', sessionRes.reason)
+
+      const entries = entriesRes.status === 'fulfilled' ? entriesRes.value : []
+      const todos = todosRes.status === 'fulfilled' ? todosRes.value : []
+      const blocks = blocksRes.status === 'fulfilled' ? blocksRes.value : []
+      const session = sessionRes.status === 'fulfilled' ? sessionRes.value : null
       const usedTags = [...new Set(entries.map(e => e.tag_key))]
 
       setState(prev => {
@@ -98,6 +113,7 @@ export function useAppState(): AppState & AppActions {
         }
       })
     } catch (e) {
+      console.error('loadAll failed:', e)
       setState(prev => ({ ...prev, error: String(e) }))
     }
   }, [])
@@ -227,11 +243,19 @@ export function useAppState(): AppState & AppActions {
     setState(prev => ({ ...prev, inputFocused: v }))
   }, [])
 
+  const setConfig = useCallback((config: AppConfig) => {
+    setState(prev => {
+      const validTags = config.tags.filter(t => t.active && (t.category === 'work' || t.category === 'any'))
+      const clampedTagIdx = Math.min(prev.tagIdx, Math.max(0, validTags.length - 1))
+      return { ...prev, config, tagIdx: clampedTagIdx }
+    })
+  }, [])
+
   // Bootstrap: load config on mount
   useEffect(() => {
-    api.getConfig().then(config => {
+    api.getConfig().then(async config => {
+      await api.initDb(config.db_path)
       setState(prev => ({ ...prev, config, dbPath: config.db_path }))
-      api.initDb(config.db_path).catch(console.error)
     }).catch(e => {
       setState(prev => ({ ...prev, error: String(e) }))
     })
@@ -264,5 +288,6 @@ export function useAppState(): AppState & AppActions {
     setTodoVisible,
     setDialogOpen,
     setInputFocused,
+    setConfig,
   }
 }
