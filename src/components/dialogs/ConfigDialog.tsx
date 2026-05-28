@@ -118,7 +118,7 @@ export default function ConfigDialog({ open, tags: initialTags, onSave, onClose 
       } else if ((e.key === 'd' || e.key === 'D') && !confirmDelete) {
         e.preventDefault()
         if (tags.length > 0) setConfirmDelete(true)
-      } else if (e.key === 'd' && confirmDelete) {
+      } else if ((e.key === 'd' || e.key === 'D') && confirmDelete) {
         e.preventDefault()
         deleteSelected(selectedIdx)
       } else if ((e.key === 's' || e.key === 'S') && !confirmDelete) {
