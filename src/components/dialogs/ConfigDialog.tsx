@@ -313,7 +313,12 @@ function EditRow({ draft, isNew, onChange, onCommit, onCancel }: EditRowProps) {
       }}>
         {/* Category toggle */}
         <button
-          onClick={() => onChange({ ...draft, category: draft.category === 'work' ? 'any' : 'work' })}
+          onClick={() => {
+            const CATS = ['work', 'any']
+            const curIdx = CATS.indexOf(draft.category)
+            const nextCat = curIdx === -1 ? CATS[0] : CATS[(curIdx + 1) % CATS.length]
+            onChange({ ...draft, category: nextCat })
+          }}
           style={{
             background: 'transparent',
             border: `1px solid ${BORDER_NORMAL}`,

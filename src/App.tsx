@@ -322,7 +322,7 @@ export default function App() {
     if (!app.config) return
     try {
       await api.saveTags(app.config.config_path, tags)
-      const newConfig = await api.getConfig()
+      const newConfig = await api.getConfig(app.config.config_path)
       app.setConfig(newConfig)
       closeDialog()
       showToast('Tags gespeichert', 'success')
