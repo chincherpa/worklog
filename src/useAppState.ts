@@ -2,6 +2,14 @@ import { useState, useCallback, useRef, useEffect } from 'react'
 import { api } from './lib/invoke'
 import type { ActivePanel, AppConfig, FocusSession, LogEntry, Tag, Todo } from './types'
 
+const DONE_STATUSES = new Set(['done', 'cancelled', 'dropped'])
+
+function sortTodosForDisplay(todos: Todo[]): Todo[] {
+  const active = todos.filter(t => !DONE_STATUSES.has(t.status))
+  const done = todos.filter(t => DONE_STATUSES.has(t.status))
+  return [...active, ...done]
+}
+
 export interface AppState {
   config: AppConfig | null
   dbPath: string
@@ -92,7 +100,7 @@ export function useAppState(): AppState & AppActions {
       if (sessionRes.status === 'rejected') console.error('sessionGetActive failed:', sessionRes.reason)
 
       const entries = entriesRes.status === 'fulfilled' ? entriesRes.value : []
-      const todos = todosRes.status === 'fulfilled' ? todosRes.value : []
+      const todos = todosRes.status === 'fulfilled' ? sortTodosForDisplay(todosRes.value) : []
       const blocks = blocksRes.status === 'fulfilled' ? blocksRes.value : []
       const session = sessionRes.status === 'fulfilled' ? sessionRes.value : null
       const usedTags = [...new Set(entries.map(e => e.tag_key))]
@@ -140,7 +148,7 @@ export function useAppState(): AppState & AppActions {
     const s = stateRef.current
     if (!s.dbPath) return
     try {
-      const todos = await api.todoList(s.dbPath, undefined, 'work')
+      const todos = sortTodosForDisplay(await api.todoList(s.dbPath, undefined, 'work'))
       setState(prev => ({ ...prev, todos }))
     } catch (e) {
       setState(prev => ({ ...prev, error: String(e) }))

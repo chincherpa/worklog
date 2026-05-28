@@ -4741,8 +4741,8 @@ dependencies = [
 ]
 
 [[package]]
-name = "worklog-tauri"
-version = "0.1.0"
+name = "worklog"
+version = "0.1.3"
 dependencies = [
  "chrono",
  "dirs-next",

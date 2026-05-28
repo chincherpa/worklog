@@ -29,20 +29,15 @@ No test suite exists. Type checking is the primary correctness check.
 App requires `config.toml` at `./config.toml` or `~/.config/worklog/config.toml`. Structure:
 
 ```toml
-db_path = "journal.db"   # relative to config file
+db_path = "journal.db"   # relative to config file (or absolute)
 
-[schedule]
-work_start = "06:00"
-work_end   = "15:00"
-handover_window = 15
-
-[tags.work]
-note   = { symbol = "📝", name = "Note",  color = "#888", active = true }
-done   = { symbol = "✅", name = "Done",  color = "#4a4", active = true }
-block  = { symbol = "🚧", name = "Block", color = "#a44", active = true }
+[tags]
+done   = { symbol = "✓",  name = "Erledigt",  color = "#00C896" }
+block  = { symbol = "✕",  name = "Blockiert", color = "#FF6B6B" }
+note   = { symbol = "🗒️",  name = "Notiz",     color = "#D0D0D0" }
 ```
 
-Tags have categories (`work`, `any`, `family`, etc.) that control visibility per mode.
+Tags are a flat key→{symbol, name, color} map. No categories or active flags. Editable at runtime via `ConfigDialog` (g/G). `[schedule]` and `[projects]` sections are accepted in TOML but currently ignored by the backend.
 
 ## Architecture
 
@@ -52,7 +47,7 @@ Tags have categories (`work`, `any`, `family`, etc.) that control visibility per
 
 **Panels:** Three side-by-side panels — `LogPanel` (left), `ContentPanel` (center, toggleable), `TodoPanel` (right, toggleable). Active panel determines which keyboard actions apply.
 
-**Dialogs:** Controlled from `App.tsx` via a single `{ type: DialogType }` state. Dialogs are modal and block global keyboard handler via `app.dialogOpen`.
+**Dialogs:** Controlled from `App.tsx` via a single `{ type: DialogType }` state. Types: `confirm`, `newTodo`, `contentEdit`, `tagSelect`, `focus`, `debrief`, `todoDetail`, `weekly`, `help`, `config`. Modal, block global keyboard handler via `app.dialogOpen`.
 
 **Backend modules:**
 - `src-tauri/src/commands/` — one file per domain (log, todo, session, notes, config, git, meta)
@@ -66,8 +61,16 @@ Tags have categories (`work`, `any`, `family`, etc.) that control visibility per
 
 ## Key conventions
 
-- Tags with `category = "work"` or `"any"` appear in the log input tag cycle (Tab to cycle).
+- All tags cycle in log input (Tab to cycle); no category filtering anymore.
 - `todo.mode` controls which todos show: `"work"` todos only visible in work mode.
 - `log_entries.resolved` flag marks "block" entries as resolved.
 - Focus sessions have a single-active constraint via SQLite partial unique index (`WHERE ended_at IS NULL`).
 - UI strings are German (the app is personal tooling).
+- `ConfigDialog` (g/G) edits tags at runtime and writes back to `config.toml`.
+
+## Build & Release
+
+```bat
+build-release.bat       # bumps patch version, builds, zips exe to X:\Bertrandt\worklog.zip
+bump-version.ps1        # increments patch in package.json + tauri.conf.json + Cargo.toml
+```
