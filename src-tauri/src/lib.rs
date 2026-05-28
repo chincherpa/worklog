@@ -15,6 +15,7 @@ pub fn run() {
             get_config,
             get_db_path,
             init_db,
+            save_tags,
             // log
             log_add,
             log_get,
