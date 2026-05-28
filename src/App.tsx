@@ -17,15 +17,17 @@ import DebriefingDialog from './components/dialogs/DebriefingDialog'
 import TodoDetailDialog from './components/dialogs/TodoDetailDialog'
 import WeeklyReviewDialog from './components/dialogs/WeeklyReviewDialog'
 import KeybindingsHelpDialog from './components/dialogs/KeybindingsHelpDialog'
+import ConfigDialog from './components/dialogs/ConfigDialog'
 import Toast, { useToast } from './components/widgets/Toast'
 import type { NewTodoResult } from './components/dialogs/NewTodoDialog'
 import type { FocusOutcome, FocusResult } from './components/dialogs/FocusDialog'
 import type { DebriefResult } from './components/dialogs/DebriefingDialog'
+import type { Tag } from './types'
 
 type DialogType =
   | 'none' | 'confirm' | 'newTodo' | 'contentEdit'
   | 'tagSelect' | 'focus' | 'debrief' | 'todoDetail'
-  | 'weekly' | 'help'
+  | 'weekly' | 'help' | 'config'
 
 interface DialogData {
   type: DialogType
@@ -258,6 +260,10 @@ export default function App() {
       case 'openHelp':
         openDialog({ type: 'help' })
         break
+
+      case 'openConfig':
+        openDialog({ type: 'config' })
+        break
     }
   }, [app, dialog, openDialog, closeDialog, showToast])
 
@@ -312,12 +318,29 @@ export default function App() {
     showToast('Session beendet', 'info')
   }, [app, dialog, closeDialog, showToast])
 
+  const handleConfigSave = useCallback(async (tags: Tag[]) => {
+    if (!app.config) return
+    try {
+      await api.saveTags(app.config.config_path, tags)
+      const newConfig = await api.getConfig()
+      app.setConfig(newConfig)
+      closeDialog()
+      showToast('Tags gespeichert', 'success')
+    } catch (e) {
+      showToast(String(e), 'error')
+    }
+  }, [app, closeDialog, showToast])
+
   const handleLogSubmit = useCallback(async (text: string) => {
     if (!app.dbPath || !app.currentTag()) return
     const tag = app.currentTag()!
-    await api.logAdd(app.dbPath, tag.key, text)
-    await app.loadLog()
-  }, [app])
+    try {
+      await api.logAdd(app.dbPath, tag.key, text)
+      await app.loadLog()
+    } catch (e) {
+      showToast(String(e), 'error')
+    }
+  }, [app, showToast])
 
   const displayedEntry = app.logEntries.find(e => e.id === app.displayedEntryId)
   const selectedTodo = app.todos[app.todoIdx] ?? null
@@ -342,7 +365,7 @@ export default function App() {
         <div>⚠ Konfigurationsfehler</div>
         <div style={{ color: '#888', maxWidth: 400 }}>{app.error}</div>
         <div style={{ color: '#555', fontSize: 11 }}>
-          Erstelle config.toml unter {'{'}cwd{'}'}/config.toml oder ~/.config/tui-log/config.toml
+          Erstelle config.toml unter {'{'}cwd{'}'}/config.toml oder ~/.config/worklog/config.toml
         </div>
       </div>
     )
@@ -465,6 +488,13 @@ export default function App() {
 
       <KeybindingsHelpDialog
         open={dialog.type === 'help'}
+        onClose={closeDialog}
+      />
+
+      <ConfigDialog
+        open={dialog.type === 'config'}
+        tags={allTags}
+        onSave={handleConfigSave}
         onClose={closeDialog}
       />
 
