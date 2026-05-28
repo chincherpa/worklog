@@ -5,6 +5,7 @@ import type {
   FocusSession,
   LogEntry,
   SubTodo,
+  Tag,
   Todo,
   TodoNote,
   WeekSummary,
@@ -18,6 +19,8 @@ export const api = {
     invoke<string>('get_db_path', { configPath }),
   initDb: (dbPath: string) =>
     invoke<number>('init_db', { dbPath }),
+  saveTags: (configPath: string, tags: Tag[]) =>
+    invoke<void>('save_tags', { configPath, tags }),
 
   // Log
   logAdd: (dbPath: string, tagKey: string, content: string, mode?: string, todoId?: number) =>
