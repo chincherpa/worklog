@@ -41,13 +41,18 @@ pub fn migrate(db_path: &str) -> Result<i64, String> {
         (4, MIGRATION_4),
         (5, MIGRATION_5),
         (6, MIGRATION_6),
+        (7, MIGRATION_7),
     ];
 
     for (version, sql) in migrations {
         if *version <= current {
             continue;
         }
-        exec_migration_sql(&conn, sql).map_err(|e| e.to_string())?;
+        if *version == 7 {
+            add_column_if_missing(&conn, "todos", "tags", "TEXT").map_err(|e| e.to_string())?;
+        } else {
+            exec_migration_sql(&conn, sql).map_err(|e| e.to_string())?;
+        }
         conn.execute(
             "INSERT INTO schema_version (version) VALUES (?1)",
             rusqlite::params![version],
@@ -64,6 +69,18 @@ pub fn migrate(db_path: &str) -> Result<i64, String> {
         .unwrap_or(0);
 
     Ok(new_version)
+}
+
+fn add_column_if_missing(conn: &Connection, table: &str, column: &str, col_type: &str) -> Result<()> {
+    let exists: bool = conn
+        .prepare(&format!("SELECT COUNT(*) FROM pragma_table_info('{}') WHERE name=?1", table))?
+        .query_row(rusqlite::params![column], |row| row.get::<_, i64>(0))
+        .map(|n| n > 0)
+        .unwrap_or(false);
+    if !exists {
+        conn.execute_batch(&format!("ALTER TABLE {} ADD COLUMN {} {};", table, column, col_type))?;
+    }
+    Ok(())
 }
 
 fn exec_migration_sql(conn: &Connection, sql: &str) -> Result<()> {
@@ -231,3 +248,7 @@ const MIGRATION_6: &str = r#"
     );
     CREATE INDEX IF NOT EXISTS idx_subtodo_todo ON sub_todos(todo_id)
 "#;
+
+// Handled programmatically in migrate() via add_column_if_missing — not SQL.
+// Old binaries ran MIGRATION_3/4 without the tags column; this adds it retroactively.
+const MIGRATION_7: &str = "";

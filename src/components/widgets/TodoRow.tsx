@@ -15,8 +15,6 @@ export default function TodoRow({ todo, selected, hasFocusSession, onClick }: Pr
   const statusIcon = STATUS_ICONS[effectiveStatus] ?? '○'
   const priorityColor = PRIORITY_COLORS[todo.priority] ?? '#888'
   const priorityIcon = PRIORITY_ICONS[todo.priority] ?? '●'
-  const isDone = todo.status === 'done' || todo.status === 'cancelled' || todo.status === 'dropped'
-
   return (
     <div
       onClick={onClick}
@@ -25,7 +23,6 @@ export default function TodoRow({ todo, selected, hasFocusSession, onClick }: Pr
         background: selected ? BG_SELECTED : 'transparent',
         cursor: 'pointer',
         borderLeft: selected ? `3px solid ${BORDER_ACTIVE}` : '3px solid transparent',
-        opacity: isDone ? 0.5 : 1,
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -40,7 +37,7 @@ export default function TodoRow({ todo, selected, hasFocusSession, onClick }: Pr
           overflow: 'hidden',
           textOverflow: 'ellipsis',
           whiteSpace: 'nowrap',
-          textDecoration: isDone ? 'line-through' : 'none',
+          color: effectiveStatus !== 'open' ? statusColor : undefined,
         }}>
           {todo.title}
         </span>

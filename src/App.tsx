@@ -365,7 +365,7 @@ export default function App() {
         <div>⚠ Konfigurationsfehler</div>
         <div style={{ color: '#888', maxWidth: 400 }}>{app.error}</div>
         <div style={{ color: '#555', fontSize: 11 }}>
-          Erstelle config.toml unter {'{'}cwd{'}'}/config.toml oder ~/.config/worklog/config.toml
+          Erstelle config.toml neben der worklog.exe oder unter ~/.config/worklog/config.toml
         </div>
       </div>
     )

@@ -18,23 +18,8 @@ struct TagOut {
 }
 
 #[derive(Serialize)]
-struct ScheduleOut {
-    work_start: String,
-    work_end: String,
-    handover_window: i64,
-}
-
-#[derive(Serialize)]
-struct ProjectsOut {
-    active: Vec<String>,
-}
-
-#[derive(Serialize)]
 struct ConfigOut {
     db_path: String,
-    schedule: ScheduleOut,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    projects: Option<ProjectsOut>,
     tags: HashMap<String, TagOut>,
 }
 
@@ -67,20 +52,8 @@ pub fn save_tags(config_path: String, tags: Vec<TagInput>) -> Result<(), String>
         });
     }
 
-    let projects = if current.projects.is_empty() {
-        None
-    } else {
-        Some(ProjectsOut { active: current.projects })
-    };
-
     let config_out = ConfigOut {
         db_path: current.db_path,
-        schedule: ScheduleOut {
-            work_start: current.schedule.work_start,
-            work_end: current.schedule.work_end,
-            handover_window: current.schedule.handover_window,
-        },
-        projects,
         tags: tags_map,
     };
 

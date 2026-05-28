@@ -150,6 +150,16 @@ export default function TodoPanel({
 
 function ExpandedSection({ expanded }: { expanded: ExpandedData }) {
   const { subTodos, notes, linkedLogs } = expanded
+  const [hoveredNote, setHoveredNote] = useState<number | null>(null)
+  const [copiedNote, setCopiedNote] = useState<number | null>(null)
+
+  function handleCopyNote(e: React.MouseEvent, id: number, content: string) {
+    e.stopPropagation()
+    navigator.clipboard.writeText(content).then(() => {
+      setCopiedNote(id)
+      setTimeout(() => setCopiedNote(null), 1200)
+    })
+  }
 
   return (
     <div style={{
@@ -189,8 +199,32 @@ function ExpandedSection({ expanded }: { expanded: ExpandedData }) {
       {notes.length > 0 && (
         <div>
           {notes.map(n => (
-            <div key={n.id} style={{ color: '#888899', marginBottom: 2 }}>
-              · {n.content}
+            <div
+              key={n.id}
+              onMouseEnter={() => setHoveredNote(n.id)}
+              onMouseLeave={() => setHoveredNote(null)}
+              style={{ color: '#888899', marginBottom: 2, display: 'flex', alignItems: 'flex-start', gap: 4 }}
+            >
+              <span className="selectable" style={{ flex: 1, wordBreak: 'break-word' }}>· {n.content}</span>
+              {hoveredNote === n.id && (
+                <button
+                  onClick={(e) => handleCopyNote(e, n.id, n.content)}
+                  title="Kopieren"
+                  style={{
+                    flexShrink: 0,
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: copiedNote === n.id ? '#4a4' : '#555577',
+                    fontSize: 11,
+                    padding: '0 2px',
+                    lineHeight: 1,
+                    fontFamily: 'inherit',
+                  }}
+                >
+                  {copiedNote === n.id ? '✓' : '⎘'}
+                </button>
+              )}
             </div>
           ))}
         </div>

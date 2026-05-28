@@ -15,9 +15,9 @@ export const STATUS_COLORS: Record<string, string> = {
   open: '#C8C8C8',
   active: '#66FF66',
   paused: '#FFD700',
-  done: '#2E7D32',
-  dropped: '#8B0000',
-  cancelled: '#8B0000',
+  done: '#4CAF50',
+  dropped: '#EF5350',
+  cancelled: '#EF5350',
   focus: '#55CCFF',
 }
 

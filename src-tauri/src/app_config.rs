@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use std::path::{Path, PathBuf};
+use toml::Value;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Tag {
@@ -11,46 +11,10 @@ pub struct Tag {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ScheduleConfig {
-    pub work_start: String,
-    pub work_end: String,
-    pub handover_window: i64,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AppConfig {
-    pub schedule: ScheduleConfig,
-    pub projects: Vec<String>,
     pub tags: Vec<Tag>,
     pub config_path: String,
     pub db_path: String,
-}
-
-#[derive(Debug, Deserialize)]
-struct RawConfig {
-    schedule: Option<RawSchedule>,
-    projects: Option<RawProjects>,
-    tags: Option<HashMap<String, RawTag>>,
-    db_path: Option<String>,
-}
-
-#[derive(Debug, Deserialize)]
-struct RawSchedule {
-    work_start: Option<String>,
-    work_end: Option<String>,
-    handover_window: Option<i64>,
-}
-
-#[derive(Debug, Deserialize)]
-struct RawProjects {
-    active: Option<Vec<String>>,
-}
-
-#[derive(Debug, Deserialize)]
-struct RawTag {
-    symbol: String,
-    name: String,
-    color: String,
 }
 
 pub fn load_config(config_path: Option<String>) -> Result<AppConfig, String> {
@@ -59,40 +23,15 @@ pub fn load_config(config_path: Option<String>) -> Result<AppConfig, String> {
     let content = std::fs::read_to_string(&path)
         .map_err(|e| format!("Cannot read config: {e}"))?;
 
-    let raw: RawConfig = toml::from_str(&content)
+    let doc: Value = toml::from_str(&content)
         .map_err(|e| format!("Invalid TOML: {e}"))?;
 
-    let schedule = raw.schedule.map(|s| ScheduleConfig {
-        work_start: s.work_start.unwrap_or_else(|| "06:00".to_string()),
-        work_end: s.work_end.unwrap_or_else(|| "15:00".to_string()),
-        handover_window: s.handover_window.unwrap_or(15),
-    }).unwrap_or(ScheduleConfig {
-        work_start: "06:00".to_string(),
-        work_end: "15:00".to_string(),
-        handover_window: 15,
-    });
+    let tags = parse_tags(doc.get("tags"));
 
-    let projects = raw.projects
-        .and_then(|p| p.active)
-        .unwrap_or_default();
-
-    let mut tags: Vec<Tag> = Vec::new();
-    if let Some(tags_map) = raw.tags {
-        for (key, raw_tag) in &tags_map {
-            tags.push(Tag {
-                key: key.clone(),
-                symbol: raw_tag.symbol.clone(),
-                name: raw_tag.name.clone(),
-                color: raw_tag.color.clone(),
-            });
-        }
-    }
-
-    let db_path = if let Some(explicit) = raw.db_path {
-        // Absolute path or relative to config file location
-        let p = PathBuf::from(&explicit);
+    let db_path = if let Some(explicit) = doc.get("db_path").and_then(|v| v.as_str()) {
+        let p = PathBuf::from(explicit);
         if p.is_absolute() {
-            explicit
+            explicit.to_string()
         } else {
             path.parent().unwrap_or(Path::new(".")).join(p)
                 .to_string_lossy().to_string()
@@ -106,12 +45,22 @@ pub fn load_config(config_path: Option<String>) -> Result<AppConfig, String> {
     };
 
     Ok(AppConfig {
-        schedule,
-        projects,
         tags,
         config_path: path.to_string_lossy().to_string(),
         db_path,
     })
+}
+
+fn parse_tags(tags_val: Option<&Value>) -> Vec<Tag> {
+    let Some(Value::Table(tags_table)) = tags_val else { return vec![] };
+    tags_table.iter().filter_map(|(key, val)| {
+        Some(Tag {
+            key: key.clone(),
+            symbol: val.get("symbol")?.as_str()?.to_string(),
+            name: val.get("name")?.as_str()?.to_string(),
+            color: val.get("color")?.as_str()?.to_string(),
+        })
+    }).collect()
 }
 
 fn resolve_config_path(config_path: Option<String>) -> Result<PathBuf, String> {
@@ -123,7 +72,17 @@ fn resolve_config_path(config_path: Option<String>) -> Result<PathBuf, String> {
         return Err(format!("Config not found: {p}"));
     }
 
-    // Check beside executable / working directory
+    // Check beside executable
+    if let Ok(exe) = std::env::current_exe() {
+        if let Some(exe_dir) = exe.parent() {
+            let beside_exe = exe_dir.join("config.toml");
+            if beside_exe.exists() {
+                return Ok(beside_exe);
+            }
+        }
+    }
+
+    // Fallback: working directory
     let local = PathBuf::from("config.toml");
     if local.exists() {
         return Ok(local);

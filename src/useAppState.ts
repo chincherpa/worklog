@@ -87,6 +87,7 @@ export function useAppState(): AppState & AppActions {
       if (entriesRes.status === 'rejected') console.error('logGetAll failed:', entriesRes.reason)
       else console.log('logGetAll ok, count=', entriesRes.value.length)
       if (todosRes.status === 'rejected') console.error('todoList failed:', todosRes.reason)
+      else console.log('todoList ok, count=', todosRes.value.length, 'dbPath=', s.dbPath)
       if (blocksRes.status === 'rejected') console.error('logGetOpenBlocks failed:', blocksRes.reason)
       if (sessionRes.status === 'rejected') console.error('sessionGetActive failed:', sessionRes.reason)
 

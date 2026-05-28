@@ -69,15 +69,7 @@ export interface Tag {
   color: string
 }
 
-export interface ScheduleConfig {
-  work_start: string
-  work_end: string
-  handover_window: number
-}
-
 export interface AppConfig {
-  schedule: ScheduleConfig
-  projects: string[]
   tags: Tag[]
   config_path: string
   db_path: string
