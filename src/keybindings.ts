@@ -23,6 +23,7 @@ export type ActionName =
   | 'prevFilter'
   | 'prevTag'
   | 'openHelp'
+  | 'openConfig'
 
 function keyStr(e: KeyboardEvent): string {
   const parts: string[] = []
@@ -73,6 +74,8 @@ const BINDINGS: Record<string, ActionName> = {
   p: 'prevTag',
   P: 'prevTag',
   '?': 'openHelp',
+  g: 'openConfig',
+  G: 'openConfig',
 }
 
 export function getAction(e: KeyboardEvent): ActionName | null {
