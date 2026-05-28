@@ -48,9 +48,9 @@ export default function LogEntryRow({ entry, tag, selected, onClick }: Props) {
         whiteSpace: 'nowrap',
         flex: 1,
       }}>
-        {hasBody && <span style={{ color: TEXT_DIM, marginRight: 4 }}>📄</span>}
         {firstLine(entry.content)}
       </span>
+      {hasBody && <span style={{ color: TEXT_DIM, fontSize: 11, flexShrink: 0 }}>📄</span>}
     </div>
   )
 }

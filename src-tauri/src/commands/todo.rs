@@ -103,11 +103,8 @@ pub fn todo_list(
     );
 
     let mut stmt = conn.prepare(&sql).map_err(|e| e.to_string())?;
-    for (i, val) in bind_vals.iter().enumerate() {
-        stmt.raw_bind_parameter(i + 1, val).map_err(|e| e.to_string())?;
-    }
     let rows = stmt
-        .query_map([], |row| row_to_todo(row))
+        .query_map(rusqlite::params_from_iter(bind_vals.iter()), |row| row_to_todo(row))
         .map_err(|e| e.to_string())?;
     rows.map(|r| r.map_err(|e| e.to_string())).collect()
 }

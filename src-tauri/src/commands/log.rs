@@ -115,11 +115,8 @@ pub fn log_get_all(db_path: String, mode: Option<String>) -> Result<Vec<LogEntry
     };
 
     let mut stmt = conn.prepare(&sql).map_err(|e| e.to_string())?;
-    for (i, p) in params_vec.iter().enumerate() {
-        stmt.raw_bind_parameter(i + 1, p).map_err(|e| e.to_string())?;
-    }
     let rows = stmt
-        .query_map([], |row| row_to_log(row))
+        .query_map(rusqlite::params_from_iter(params_vec.iter()), |row| row_to_log(row))
         .map_err(|e| e.to_string())?;
     rows.map(|r| r.map_err(|e| e.to_string())).collect()
 }
@@ -146,11 +143,8 @@ pub fn log_used_tags(db_path: String, mode: Option<String>) -> Result<Vec<String
     };
 
     let mut stmt = conn.prepare(&sql).map_err(|e| e.to_string())?;
-    for (i, p) in params_vec.iter().enumerate() {
-        stmt.raw_bind_parameter(i + 1, p).map_err(|e| e.to_string())?;
-    }
     let rows = stmt
-        .query_map([], |row| row.get::<_, String>(0))
+        .query_map(rusqlite::params_from_iter(params_vec.iter()), |row| row.get::<_, String>(0))
         .map_err(|e| e.to_string())?;
     rows.map(|r| r.map_err(|e| e.to_string())).collect()
 }
@@ -205,14 +199,13 @@ pub fn log_get_range(
         )
     };
 
-    let mut stmt = conn.prepare(&sql).map_err(|e| e.to_string())?;
-    stmt.raw_bind_parameter(1, &date_from).map_err(|e| e.to_string())?;
-    stmt.raw_bind_parameter(2, &date_to).map_err(|e| e.to_string())?;
-    if let Some(ref t) = extra {
-        stmt.raw_bind_parameter(3, t).map_err(|e| e.to_string())?;
+    let mut param_vals = vec![date_from, date_to];
+    if let Some(t) = extra {
+        param_vals.push(t);
     }
+    let mut stmt = conn.prepare(&sql).map_err(|e| e.to_string())?;
     let rows = stmt
-        .query_map([], |row| row_to_log(row))
+        .query_map(rusqlite::params_from_iter(param_vals.iter()), |row| row_to_log(row))
         .map_err(|e| e.to_string())?;
     rows.map(|r| r.map_err(|e| e.to_string())).collect()
 }

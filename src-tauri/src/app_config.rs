@@ -8,8 +8,6 @@ pub struct Tag {
     pub symbol: String,
     pub name: String,
     pub color: String,
-    pub category: String,
-    pub active: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -32,7 +30,7 @@ pub struct AppConfig {
 struct RawConfig {
     schedule: Option<RawSchedule>,
     projects: Option<RawProjects>,
-    tags: Option<HashMap<String, HashMap<String, RawTag>>>,
+    tags: Option<HashMap<String, RawTag>>,
     db_path: Option<String>,
 }
 
@@ -53,7 +51,6 @@ struct RawTag {
     symbol: String,
     name: String,
     color: String,
-    active: Option<bool>,
 }
 
 pub fn load_config(config_path: Option<String>) -> Result<AppConfig, String> {
@@ -81,17 +78,13 @@ pub fn load_config(config_path: Option<String>) -> Result<AppConfig, String> {
 
     let mut tags: Vec<Tag> = Vec::new();
     if let Some(tags_map) = raw.tags {
-        for (category, entries) in &tags_map {
-            for (key, raw_tag) in entries {
-                tags.push(Tag {
-                    key: key.clone(),
-                    symbol: raw_tag.symbol.clone(),
-                    name: raw_tag.name.clone(),
-                    color: raw_tag.color.clone(),
-                    category: category.clone(),
-                    active: raw_tag.active.unwrap_or(true),
-                });
-            }
+        for (key, raw_tag) in &tags_map {
+            tags.push(Tag {
+                key: key.clone(),
+                symbol: raw_tag.symbol.clone(),
+                name: raw_tag.name.clone(),
+                color: raw_tag.color.clone(),
+            });
         }
     }
 
@@ -136,13 +129,13 @@ fn resolve_config_path(config_path: Option<String>) -> Result<PathBuf, String> {
         return Ok(local);
     }
 
-    // Check ~/.config/tui-log/config.toml
+    // Check ~/.config/worklog/config.toml
     if let Some(home) = dirs_next::home_dir() {
-        let user_config = home.join(".config").join("tui-log").join("config.toml");
+        let user_config = home.join(".config").join("worklog").join("config.toml");
         if user_config.exists() {
             return Ok(user_config);
         }
     }
 
-    Err("config.toml not found. Expected at ./config.toml or ~/.config/tui-log/config.toml".to_string())
+    Err("config.toml not found. Expected at ./config.toml or ~/.config/worklog/config.toml".to_string())
 }

@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "tui-log",
+  "productName": "worklog",
   "version": "0.1.0",
-  "identifier": "de.chincherpa.tui-log",
+  "identifier": "de.chincherpa.worklog",
   "build": {
     "frontendDist": "../dist",
     "devUrl": "http://localhost:1420",
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "tui-log — daily journal",
+        "title": "worklog — daily journal",
         "width": 1400,
         "height": 900,
         "minWidth": 900,

@@ -1,5 +1,5 @@
 {
-  "name": "tui-log-tauri",
+  "name": "worklog-tauri",
   "version": "0.1.0",
   "type": "module",
   "scripts": {

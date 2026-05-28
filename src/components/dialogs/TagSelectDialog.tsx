@@ -33,7 +33,7 @@ export default function TagSelectDialog({ open, tags, currentKey, onClose }: Pro
         maxHeight: 400,
         overflowY: 'auto',
       }}>
-        {tags.filter(t => t.active).map(tag => (
+        {tags.map(tag => (
           <button
             key={tag.key}
             onClick={() => onClose(tag.key)}

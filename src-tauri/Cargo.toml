@@ -1,20 +1,20 @@
 [package]
-name = "tui-log-tauri"
+name = "worklog-tauri"
 version = "0.1.0"
-description = "tui-log Tauri App"
+description = "worklog Tauri App"
 authors = []
 edition = "2021"
 rust-version = "1.77.2"
 
 [lib]
-name = "tui_log_tauri_lib"
+name = "worklog_tauri_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
-tauri = { version = "2", features = [] }
+tauri = { version = "2", features = ["devtools"] }
 tauri-plugin-shell = "2"
 tauri-plugin-process = "2"
 serde = { version = "1", features = ["derive"] }

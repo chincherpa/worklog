@@ -8,8 +8,6 @@ pub struct TagInput {
     pub symbol: String,
     pub name: String,
     pub color: String,
-    pub category: String,
-    pub active: bool,
 }
 
 #[derive(Serialize)]
@@ -17,7 +15,6 @@ struct TagOut {
     symbol: String,
     name: String,
     color: String,
-    active: bool,
 }
 
 #[derive(Serialize)]
@@ -38,7 +35,7 @@ struct ConfigOut {
     schedule: ScheduleOut,
     #[serde(skip_serializing_if = "Option::is_none")]
     projects: Option<ProjectsOut>,
-    tags: HashMap<String, HashMap<String, TagOut>>,
+    tags: HashMap<String, TagOut>,
 }
 
 #[tauri::command]
@@ -61,17 +58,13 @@ pub fn init_db(db_path: String) -> Result<i64, String> {
 pub fn save_tags(config_path: String, tags: Vec<TagInput>) -> Result<(), String> {
     let current = load_config(Some(config_path.clone()))?;
 
-    let mut tags_map: HashMap<String, HashMap<String, TagOut>> = HashMap::new();
+    let mut tags_map: HashMap<String, TagOut> = HashMap::new();
     for tag in tags {
-        tags_map
-            .entry(tag.category)
-            .or_default()
-            .insert(tag.key, TagOut {
-                symbol: tag.symbol,
-                name: tag.name,
-                color: tag.color,
-                active: tag.active,
-            });
+        tags_map.insert(tag.key, TagOut {
+            symbol: tag.symbol,
+            name: tag.name,
+            color: tag.color,
+        });
     }
 
     let projects = if current.projects.is_empty() {

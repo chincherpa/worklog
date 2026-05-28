@@ -18,8 +18,6 @@ interface TagDraft {
   symbol: string
   name: string
   color: string
-  category: string
-  active: boolean
 }
 
 interface Props {
@@ -57,7 +55,7 @@ export default function ConfigDialog({ open, tags: initialTags, onSave, onClose 
   }, [])
 
   const startAdd = useCallback((currentLength: number) => {
-    const blank: TagDraft = { key: '', symbol: '', name: '', color: '#CED4DA', category: 'work', active: true }
+    const blank: TagDraft = { key: '', symbol: '', name: '', color: '#CED4DA' }
     setTags(prev => [...prev, blank as Tag])
     setSelectedIdx(currentLength)
     setDraft(blank)
@@ -156,19 +154,17 @@ export default function ConfigDialog({ open, tags: initialTags, onSave, onClose 
         {/* Column headers */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: '60px 80px 36px 1fr 130px 40px',
+          gridTemplateColumns: '80px 36px 1fr 130px',
           gap: 8,
           padding: '0 8px 6px',
           borderBottom: `1px solid ${BORDER_NORMAL}`,
           fontSize: 11,
           color: TEXT_DIM,
         }}>
-          <span>Kategorie</span>
           <span>Key</span>
           <span>Sym</span>
           <span>Name</span>
           <span>Farbe</span>
-          <span>Aktiv</span>
         </div>
 
         {/* Tag rows */}
@@ -199,7 +195,7 @@ export default function ConfigDialog({ open, tags: initialTags, onSave, onClose 
                 onDoubleClick={() => startEdit(idx, tags)}
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: '60px 80px 36px 1fr 130px 40px',
+                  gridTemplateColumns: '80px 36px 1fr 130px',
                   gap: 8,
                   padding: '5px 8px',
                   background: isSelected ? BG_SELECTED : 'transparent',
@@ -208,7 +204,6 @@ export default function ConfigDialog({ open, tags: initialTags, onSave, onClose 
                   alignItems: 'center',
                 }}
               >
-                <span style={{ color: TEXT_DIM, fontSize: 11 }}>{tag.category}</span>
                 <span style={{ color: TEXT_SECONDARY }}>{tag.key}</span>
                 <span>{tag.symbol}</span>
                 <span style={{ color: TEXT_PRIMARY }}>{tag.name}</span>
@@ -223,9 +218,6 @@ export default function ConfigDialog({ open, tags: initialTags, onSave, onClose 
                   }} />
                   <span style={{ color: TEXT_DIM, fontSize: 10 }}>{tag.color}</span>
                 </div>
-                <span style={{ color: tag.active ? '#00C896' : TEXT_DIM, fontSize: 13 }}>
-                  {tag.active ? '✓' : '—'}
-                </span>
               </div>
             )
           })}
@@ -307,31 +299,10 @@ function EditRow({ draft, isNew, onChange, onCommit, onCancel }: EditRowProps) {
     }}>
       <div style={{
         display: 'grid',
-        gridTemplateColumns: '60px 80px 36px 1fr',
+        gridTemplateColumns: '80px 36px 1fr',
         gap: 6,
         alignItems: 'center',
       }}>
-        {/* Category toggle */}
-        <button
-          onClick={() => {
-            const CATS = ['work', 'any']
-            const curIdx = CATS.indexOf(draft.category)
-            const nextCat = curIdx === -1 ? CATS[0] : CATS[(curIdx + 1) % CATS.length]
-            onChange({ ...draft, category: nextCat })
-          }}
-          style={{
-            background: 'transparent',
-            border: `1px solid ${BORDER_NORMAL}`,
-            borderRadius: 3,
-            color: TEXT_SECONDARY,
-            cursor: 'pointer',
-            fontSize: 11,
-            padding: '3px 4px',
-            fontFamily: 'inherit',
-          }}
-        >
-          {draft.category}
-        </button>
         {/* Key */}
         {isNew ? (
           <input
@@ -379,26 +350,6 @@ function EditRow({ draft, isNew, onChange, onCommit, onCancel }: EditRowProps) {
             }}
           />
         ))}
-        <span style={{ fontSize: 11, color: TEXT_DIM, marginLeft: 8 }}>Aktiv:</span>
-        <div
-          onClick={() => onChange({ ...draft, active: !draft.active })}
-          style={{
-            width: 18,
-            height: 18,
-            borderRadius: 3,
-            border: `1px solid ${BORDER_NORMAL}`,
-            background: draft.active ? '#00C896' : 'transparent',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: 11,
-            color: 'white',
-            flexShrink: 0,
-          }}
-        >
-          {draft.active ? '✓' : ''}
-        </div>
         <span style={{ marginLeft: 'auto', fontSize: 11, color: TEXT_DIM }}>
           Enter=Übernehmen · Esc=Abbruch
         </span>

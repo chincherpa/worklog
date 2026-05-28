@@ -26,7 +26,7 @@ No test suite exists. Type checking is the primary correctness check.
 
 ## Config
 
-App requires `config.toml` at `./config.toml` or `~/.config/tui-log/config.toml`. Structure:
+App requires `config.toml` at `./config.toml` or `~/.config/worklog/config.toml`. Structure:
 
 ```toml
 db_path = "journal.db"   # relative to config file

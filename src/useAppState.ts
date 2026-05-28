@@ -149,7 +149,7 @@ export function useAppState(): AppState & AppActions {
   const workTags = useCallback((): Tag[] => {
     const s = stateRef.current
     if (!s.config) return []
-    return s.config.tags.filter(t => t.active && (t.category === 'work' || t.category === 'any'))
+    return s.config.tags
   }, [])
 
   const currentTag = useCallback((): Tag | null => {
@@ -160,7 +160,7 @@ export function useAppState(): AppState & AppActions {
 
   const cycleTag = useCallback((dir: 1 | -1) => {
     setState(prev => {
-      const tags = prev.config?.tags.filter(t => t.active && (t.category === 'work' || t.category === 'any')) ?? []
+      const tags = prev.config?.tags ?? []
       if (tags.length === 0) return prev
       const next = ((prev.tagIdx + dir) + tags.length) % tags.length
       return { ...prev, tagIdx: next }
@@ -245,8 +245,7 @@ export function useAppState(): AppState & AppActions {
 
   const setConfig = useCallback((config: AppConfig) => {
     setState(prev => {
-      const validTags = config.tags.filter(t => t.active && (t.category === 'work' || t.category === 'any'))
-      const clampedTagIdx = Math.min(prev.tagIdx, Math.max(0, validTags.length - 1))
+      const clampedTagIdx = Math.min(prev.tagIdx, Math.max(0, config.tags.length - 1))
       return { ...prev, config, tagIdx: clampedTagIdx }
     })
   }, [])

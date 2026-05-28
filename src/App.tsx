@@ -451,7 +451,7 @@ export default function App() {
 
       <TagSelectDialog
         open={dialog.type === 'tagSelect'}
-        tags={allTags.filter(t => t.active)}
+        tags={allTags}
         currentKey={displayedEntry?.tag_key ?? null}
         onClose={handleTagSelect}
       />

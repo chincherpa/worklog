@@ -67,8 +67,6 @@ export interface Tag {
   symbol: string
   name: string
   color: string
-  category: string
-  active: boolean
 }
 
 export interface ScheduleConfig {
