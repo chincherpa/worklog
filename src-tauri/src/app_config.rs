@@ -8,6 +8,8 @@ pub struct Tag {
     pub symbol: String,
     pub name: String,
     pub color: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub bg_color: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -59,6 +61,7 @@ fn parse_tags(tags_val: Option<&Value>) -> Vec<Tag> {
             symbol: val.get("symbol")?.as_str()?.to_string(),
             name: val.get("name")?.as_str()?.to_string(),
             color: val.get("color")?.as_str()?.to_string(),
+            bg_color: val.get("bg_color").and_then(|v| v.as_str()).map(|s| s.to_string()),
         })
     }).collect()
 }

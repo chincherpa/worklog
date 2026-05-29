@@ -7,17 +7,13 @@ import {
 import { Overlay } from './ConfirmDialog'
 import type { Tag } from '../../types'
 
-const PRESET_COLORS = [
-  '#F03E3E', '#FF6B6B', '#FFD93D', '#94D82D', '#00C896',
-  '#339AF0', '#5B8DEF', '#C77DFF', '#FF922B', '#CED4DA',
-  '#D0D0D0', '#F9C74F',
-]
 
 interface TagDraft {
   key: string
   symbol: string
   name: string
   color: string
+  bg_color?: string
 }
 
 interface Props {
@@ -55,7 +51,7 @@ export default function ConfigDialog({ open, tags: initialTags, onSave, onClose 
   }, [])
 
   const startAdd = useCallback((currentLength: number) => {
-    const blank: TagDraft = { key: '', symbol: '', name: '', color: '#CED4DA' }
+    const blank: TagDraft = { key: '', symbol: '', name: '', color: '#CED4DA', bg_color: undefined }
     setTags(prev => [...prev, blank as Tag])
     setSelectedIdx(currentLength)
     setDraft(blank)
@@ -110,7 +106,7 @@ export default function ConfigDialog({ open, tags: initialTags, onSave, onClose 
       } else if (e.key === 'Enter') {
         e.preventDefault()
         if (tags.length > 0 && !confirmDelete) startEdit(selectedIdx, tags)
-      } else if (e.key === 'a' || e.key === 'A') {
+      } else if (e.key === 'n' || e.key === 'N') {
         e.preventDefault()
         if (!confirmDelete) startAdd(tags.length)
       } else if ((e.key === 'd' || e.key === 'D') && !confirmDelete) {
@@ -154,7 +150,7 @@ export default function ConfigDialog({ open, tags: initialTags, onSave, onClose 
         {/* Column headers */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: '80px 36px 1fr 130px',
+          gridTemplateColumns: '80px 36px 1fr 140px',
           gap: 8,
           padding: '0 8px 6px',
           borderBottom: `1px solid ${BORDER_NORMAL}`,
@@ -164,14 +160,14 @@ export default function ConfigDialog({ open, tags: initialTags, onSave, onClose 
           <span>Key</span>
           <span>Sym</span>
           <span>Name</span>
-          <span>Farbe</span>
+          <span>Vorschau</span>
         </div>
 
         {/* Tag rows */}
         <div style={{ overflowY: 'auto', minHeight: 120, maxHeight: 360 }}>
           {tags.length === 0 && (
             <div style={{ padding: '16px 8px', fontSize: 12, color: TEXT_DIM }}>
-              Keine Tags — A drücken um einen hinzuzufügen.
+              Keine Tags — N drücken um einen hinzuzufügen.
             </div>
           )}
           {tags.map((tag, idx) => {
@@ -195,7 +191,7 @@ export default function ConfigDialog({ open, tags: initialTags, onSave, onClose 
                 onDoubleClick={() => startEdit(idx, tags)}
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: '80px 36px 1fr 130px',
+                  gridTemplateColumns: '80px 36px 1fr 140px',
                   gap: 8,
                   padding: '5px 8px',
                   background: isSelected ? BG_SELECTED : 'transparent',
@@ -207,17 +203,16 @@ export default function ConfigDialog({ open, tags: initialTags, onSave, onClose 
                 <span style={{ color: TEXT_SECONDARY }}>{tag.key}</span>
                 <span>{tag.symbol}</span>
                 <span style={{ color: TEXT_PRIMARY }}>{tag.name}</span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                  <div style={{
-                    width: 14,
-                    height: 14,
-                    borderRadius: 3,
-                    background: tag.color,
-                    border: '1px solid rgba(255,255,255,0.15)',
-                    flexShrink: 0,
-                  }} />
-                  <span style={{ color: TEXT_DIM, fontSize: 10 }}>{tag.color}</span>
-                </div>
+                <span style={{
+                  color: tag.color,
+                  background: tag.bg_color ?? (tag.color + '28'),
+                  fontSize: 11,
+                  padding: '2px 8px',
+                  borderRadius: 10,
+                  display: 'inline-block',
+                }}>
+                  {tag.symbol} {tag.key}
+                </span>
               </div>
             )
           })}
@@ -237,7 +232,7 @@ export default function ConfigDialog({ open, tags: initialTags, onSave, onClose 
               Tag „{tags[selectedIdx].name}" löschen? D=Ja · Esc=Abbruch
             </span>
           ) : (
-            <span>↑↓ Navigieren · Enter Bearbeiten · A Neu · D Löschen · S Speichern · Esc Schließen</span>
+            <span>↑↓ Navigieren · Enter Bearbeiten · N Neu · D Löschen · S Speichern · Esc Schließen</span>
           )}
         </div>
       </div>
@@ -286,8 +281,6 @@ function EditRow({ draft, isNew, onChange, onCommit, onCancel }: EditRowProps) {
     boxSizing: 'border-box',
   }
 
-  const colorIdx = PRESET_COLORS.indexOf(draft.color)
-
   return (
     <div style={{
       padding: '8px 8px',
@@ -332,27 +325,59 @@ function EditRow({ draft, isNew, onChange, onCommit, onCancel }: EditRowProps) {
         />
       </div>
 
-      {/* Color palette + active toggle + hint */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-        <span style={{ fontSize: 11, color: TEXT_DIM, marginRight: 2 }}>Farbe:</span>
-        {PRESET_COLORS.map((c, i) => (
-          <div
-            key={c}
-            onClick={() => onChange({ ...draft, color: c })}
-            style={{
-              width: 18,
-              height: 18,
-              borderRadius: 3,
-              background: c,
-              cursor: 'pointer',
-              border: i === colorIdx ? '2px solid white' : '2px solid transparent',
-              flexShrink: 0,
-            }}
+      {/* Color pickers */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 11, color: TEXT_DIM, width: 80, flexShrink: 0 }}>Schriftfarbe:</span>
+          <input
+            type="color"
+            value={draft.color}
+            onChange={e => onChange({ ...draft, color: e.target.value })}
+            style={{ width: 28, height: 22, border: 'none', padding: 0, cursor: 'pointer', borderRadius: 3, background: 'none' }}
           />
-        ))}
-        <span style={{ marginLeft: 'auto', fontSize: 11, color: TEXT_DIM }}>
-          Enter=Übernehmen · Esc=Abbruch
-        </span>
+          <input
+            value={draft.color}
+            onChange={e => onChange({ ...draft, color: e.target.value })}
+            placeholder="#rrggbb"
+            style={{ ...inputStyle, width: 80 }}
+          />
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 11, color: TEXT_DIM, width: 80, flexShrink: 0 }}>Hintergrund:</span>
+          <input
+            type="color"
+            value={draft.bg_color ?? '#000000'}
+            disabled={draft.bg_color === undefined}
+            onChange={e => onChange({ ...draft, bg_color: e.target.value })}
+            style={{ width: 28, height: 22, border: 'none', padding: 0, cursor: draft.bg_color !== undefined ? 'pointer' : 'default', borderRadius: 3, background: 'none', opacity: draft.bg_color !== undefined ? 1 : 0.3 }}
+          />
+          <input
+            value={draft.bg_color ?? ''}
+            onChange={e => onChange({ ...draft, bg_color: e.target.value || undefined })}
+            placeholder="leer = auto"
+            style={{ ...inputStyle, width: 80 }}
+          />
+          <button
+            type="button"
+            onClick={() => onChange({ ...draft, bg_color: undefined })}
+            style={{ fontSize: 11, background: 'transparent', border: `1px solid #555`, borderRadius: 3, color: '#888', cursor: 'pointer', padding: '2px 6px' }}
+          >✕ leer</button>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 11, color: TEXT_DIM, width: 80, flexShrink: 0 }}>Vorschau:</span>
+          <span style={{
+            color: draft.color,
+            background: draft.bg_color ?? (draft.color + '28'),
+            fontSize: 11,
+            padding: '2px 8px',
+            borderRadius: 10,
+          }}>
+            {draft.symbol || '?'} {draft.key || 'key'}
+          </span>
+          <span style={{ marginLeft: 'auto', fontSize: 11, color: TEXT_DIM }}>
+            Enter=Übernehmen · Esc=Abbruch
+          </span>
+        </div>
       </div>
     </div>
   )

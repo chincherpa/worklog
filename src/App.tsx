@@ -70,17 +70,6 @@ export default function App() {
       // Ignore when typing in dialog inputs — dialogs handle their own keys
       if (app.dialogOpen) return
 
-      // Shift+Tab special: cycle panel back or cycle tag back
-      if (e.key === 'Tab' && !e.shiftKey && app.inputFocused) {
-        e.preventDefault()
-        app.cycleTag(1)
-        return
-      }
-      if (e.key === 'Tab' && e.shiftKey && app.inputFocused) {
-        e.preventDefault()
-        app.cycleTag(-1)
-        return
-      }
       // Don't intercept text input
       const target = e.target as HTMLElement
       if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
@@ -388,8 +377,9 @@ export default function App() {
         logFilter={app.logFilter}
         displayedEntryId={app.displayedEntryId}
         carryOver={app.carryOver}
-        currentTag={app.currentTag()}
-        config={app.config}
+        tags={app.config?.tags ?? []}
+        tagIdx={app.tagIdx}
+        onTagChange={app.setTagIdx}
         isActive={app.activePanel === 'log'}
         inputFocused={app.inputFocused}
         onEntrySelect={id => {

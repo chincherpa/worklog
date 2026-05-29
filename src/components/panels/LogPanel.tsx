@@ -1,9 +1,9 @@
-import { useRef, useEffect, useCallback } from 'react'
+import { useRef, useEffect, useCallback, useState } from 'react'
 import { BG_PANEL, BORDER_NORMAL, BORDER_ACTIVE, TEXT_DIM, TEXT_SECONDARY, ACCENT_GOLD } from '../../theme'
 import LogEntryRow from '../widgets/LogEntryRow'
 import DateSeparator from '../widgets/DateSeparator'
 import FilterBar from '../widgets/FilterBar'
-import type { AppConfig, LogEntry, Tag } from '../../types'
+import type { LogEntry, Tag } from '../../types'
 
 interface Props {
   logEntries: LogEntry[]
@@ -11,8 +11,9 @@ interface Props {
   logFilter: string | null
   displayedEntryId: number | null
   carryOver: LogEntry[]
-  currentTag: Tag | null
-  config: AppConfig | null
+  tags: Tag[]
+  tagIdx: number
+  onTagChange: (idx: number) => void
   isActive: boolean
   inputFocused: boolean
   onEntrySelect: (id: number) => void
@@ -25,12 +26,11 @@ interface Props {
 
 export default function LogPanel({
   logEntries, filterKeys, logFilter, displayedEntryId, carryOver,
-  currentTag, config, isActive, inputFocused,
+  tags, tagIdx, onTagChange, isActive, inputFocused,
   onEntrySelect, onLogSubmit, onFilterChange, onInputFocus, onOpenHelp,
   focusInputRef,
 }: Props) {
   const inputRef = useRef<HTMLInputElement>(null)
-  const tags = config?.tags ?? []
   const tagMap = new Map(tags.map(t => [t.key, t]))
 
   const today = new Date().toISOString().slice(0, 10)
@@ -51,12 +51,17 @@ export default function LogPanel({
     }
   }
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Tab') {
-      e.preventDefault()
-      // cycle tag - handled by parent via callback
+  const [tagDropOpen, setTagDropOpen] = useState(false)
+  const tagDropRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!tagDropOpen) return
+    const handler = (e: MouseEvent) => {
+      if (!tagDropRef.current?.contains(e.target as Node)) setTagDropOpen(false)
     }
-  }, [])
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [tagDropOpen])
 
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault()
@@ -154,24 +159,68 @@ export default function LogPanel({
         borderTop: `1px solid ${BORDER_NORMAL}`,
         flexShrink: 0,
       }}>
-        {currentTag && (
-          <span style={{
-            color: currentTag.color,
-            fontSize: 11,
-            padding: '2px 6px',
-            border: `1px solid ${currentTag.color}55`,
-            borderRadius: 3,
-            flexShrink: 0,
-          }}>
-            {currentTag.symbol} {currentTag.key}
-          </span>
+        {tags.length > 0 && (
+          <div ref={tagDropRef} style={{ position: 'relative', flexShrink: 0 }}>
+            <button
+              type="button"
+              tabIndex={-1}
+              onClick={() => setTagDropOpen(v => !v)}
+              style={{
+                color: tags[tagIdx]?.color ?? 'inherit',
+                background: tags[tagIdx]?.bg_color ?? ((tags[tagIdx]?.color ?? '#888') + '28'),
+                fontSize: 11,
+                padding: '2px 8px',
+                border: 'none',
+                borderRadius: 10,
+                cursor: 'pointer',
+                outline: 'none',
+              }}
+            >
+              {tags[tagIdx]?.symbol} {tags[tagIdx]?.key} ▾
+            </button>
+            {tagDropOpen && (
+              <div style={{
+                position: 'absolute',
+                bottom: '100%',
+                left: 0,
+                background: BG_PANEL,
+                border: `1px solid ${BORDER_NORMAL}`,
+                borderRadius: 4,
+                marginBottom: 4,
+                zIndex: 100,
+                minWidth: 120,
+                overflow: 'hidden',
+                padding: 4,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 3,
+              }}>
+                {tags.map((t, i) => (
+                  <div
+                    key={t.key}
+                    onMouseDown={() => { onTagChange(i); setTagDropOpen(false) }}
+                    style={{
+                      color: t.color,
+                      background: t.bg_color ?? (t.color + '28'),
+                      fontSize: 11,
+                      padding: '3px 8px',
+                      borderRadius: 10,
+                      cursor: 'pointer',
+                      outline: i === tagIdx ? `1px solid ${t.color}` : 'none',
+                    }}
+                  >
+                    {t.symbol} {t.key}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         )}
         <input
           ref={inputRef}
-          placeholder="Eintrag… (Shift+Tab = Tag wechseln)"
+          placeholder="Eintrag…"
           onFocus={() => onInputFocus(true)}
           onBlur={() => onInputFocus(false)}
-          onKeyDown={handleKeyDown}
           style={{
             flex: 1,
             padding: '4px 0',

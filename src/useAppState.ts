@@ -50,6 +50,7 @@ export interface AppActions {
   setDialogOpen: (v: boolean) => void
   setInputFocused: (v: boolean) => void
   setConfig: (config: AppConfig) => void
+  setTagIdx: (idx: number) => void
 }
 
 const INITIAL: AppState = {
@@ -176,6 +177,10 @@ export function useAppState(): AppState & AppActions {
     })
   }, [])
 
+  const setTagIdx = useCallback((idx: number) => {
+    setState(prev => ({ ...prev, tagIdx: idx }))
+  }, [])
+
   const cycleFilter = useCallback((dir: 1 | -1) => {
     setState(prev => {
       const keys = [null, ...prev.filterKeys]
@@ -297,5 +302,6 @@ export function useAppState(): AppState & AppActions {
     setDialogOpen,
     setInputFocused,
     setConfig,
+    setTagIdx,
   }
 }

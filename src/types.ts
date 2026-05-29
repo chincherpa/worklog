@@ -67,6 +67,7 @@ export interface Tag {
   symbol: string
   name: string
   color: string
+  bg_color?: string
 }
 
 export interface AppConfig {

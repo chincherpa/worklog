@@ -8,6 +8,7 @@ pub struct TagInput {
     pub symbol: String,
     pub name: String,
     pub color: String,
+    pub bg_color: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -15,6 +16,8 @@ struct TagOut {
     symbol: String,
     name: String,
     color: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    bg_color: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -49,6 +52,7 @@ pub fn save_tags(config_path: String, tags: Vec<TagInput>) -> Result<(), String>
             symbol: tag.symbol,
             name: tag.name,
             color: tag.color,
+            bg_color: tag.bg_color,
         });
     }
 

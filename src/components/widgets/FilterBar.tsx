@@ -1,4 +1,4 @@
-import { TEXT_DIM, BORDER_NORMAL } from '../../theme'
+import { TEXT_DIM } from '../../theme'
 import type { Tag } from '../../types'
 
 interface Props {
@@ -11,14 +11,6 @@ interface Props {
 export default function FilterBar({ filterKeys, activeFilter, tags, onSelect }: Props) {
   const tagMap = new Map(tags.map(t => [t.key, t]))
 
-  const chips = [
-    { key: null, label: 'Alle', color: TEXT_DIM },
-    ...filterKeys.map(k => {
-      const tag = tagMap.get(k)
-      return { key: k, label: tag ? `${tag.symbol} ${k}` : k, color: tag?.color ?? TEXT_DIM }
-    }),
-  ]
-
   return (
     <div style={{
       display: 'flex',
@@ -27,25 +19,47 @@ export default function FilterBar({ filterKeys, activeFilter, tags, onSelect }: 
       overflowX: 'auto',
       flexShrink: 0,
     }}>
-      {chips.map(c => {
-        const active = c.key === activeFilter
+      <button
+        onClick={() => onSelect(null)}
+        style={{
+          padding: '2px 8px',
+          border: 'none',
+          borderRadius: 10,
+          background: activeFilter === null ? TEXT_DIM + '44' : TEXT_DIM + '18',
+          color: TEXT_DIM,
+          fontSize: 11,
+          cursor: 'pointer',
+          whiteSpace: 'nowrap',
+          flexShrink: 0,
+          outline: activeFilter === null ? `1px solid ${TEXT_DIM}` : 'none',
+        }}
+      >
+        Alle
+      </button>
+      {filterKeys.map(k => {
+        const tag = tagMap.get(k)
+        const active = k === activeFilter
+        const color = tag?.color ?? TEXT_DIM
+        const bg = tag?.bg_color ?? (color + '28')
         return (
           <button
-            key={String(c.key)}
-            onClick={() => onSelect(c.key)}
+            key={k}
+            onClick={() => onSelect(k)}
             style={{
               padding: '2px 8px',
-              border: `1px solid ${active ? c.color : BORDER_NORMAL}`,
-              borderRadius: 3,
-              background: active ? c.color + '33' : 'transparent',
-              color: active ? c.color : TEXT_DIM,
+              border: 'none',
+              borderRadius: 10,
+              background: bg,
+              color: color,
               fontSize: 11,
               cursor: 'pointer',
               whiteSpace: 'nowrap',
               flexShrink: 0,
+              outline: active ? `1px solid ${color}` : 'none',
+              opacity: active ? 1 : 0.6,
             }}
           >
-            {c.label}
+            {tag ? `${tag.symbol} ${k}` : k}
           </button>
         )
       })}

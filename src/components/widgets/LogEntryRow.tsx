@@ -31,11 +31,14 @@ export default function LogEntryRow({ entry, tag, selected, onClick }: Props) {
       {tag && (
         <span style={{
           color: tag.color,
+          background: tag.bg_color ?? (tag.color + '28'),
           fontSize: 11,
-          minWidth: 72,
+          padding: '1px 6px',
+          borderRadius: 10,
+          minWidth: 60,
           flexShrink: 0,
           whiteSpace: 'nowrap',
-          overflow: 'hidden',
+          textAlign: 'center',
         }}>
           {tag.symbol} {tag.key}
         </span>
