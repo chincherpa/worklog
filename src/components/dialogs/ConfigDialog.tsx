@@ -51,7 +51,7 @@ export default function ConfigDialog({ open, tags: initialTags, onSave, onClose 
   }, [])
 
   const startAdd = useCallback((currentLength: number) => {
-    const blank: TagDraft = { key: '', symbol: '', name: '', color: '#CED4DA', bg_color: undefined }
+    const blank: TagDraft = { key: '', symbol: '', name: '', color: '#CED4DA', bg_color: '#888888' }
     setTags(prev => [...prev, blank as Tag])
     setSelectedIdx(currentLength)
     setDraft(blank)

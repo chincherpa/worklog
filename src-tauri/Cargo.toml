@@ -1,6 +1,6 @@
 [package]
 name = "worklog"
-version = "0.1.12"
+version = "0.1.13"
 description = "worklog Tauri App"
 authors = []
 edition = "2021"
