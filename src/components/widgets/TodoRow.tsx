@@ -1,3 +1,4 @@
+import { useRef, useLayoutEffect } from 'react'
 import { BG_SELECTED, BORDER_ACTIVE, TEXT_DIM, TEXT_SECONDARY, STATUS_COLORS, STATUS_ICONS, PRIORITY_COLORS, PRIORITY_ICONS } from '../../theme'
 import { formatDuration } from '../../lib/format'
 import type { Todo } from '../../types'
@@ -15,8 +16,17 @@ export default function TodoRow({ todo, selected, hasFocusSession, onClick }: Pr
   const statusIcon = STATUS_ICONS[effectiveStatus] ?? '○'
   const priorityColor = PRIORITY_COLORS[todo.priority] ?? '#888'
   const priorityIcon = PRIORITY_ICONS[todo.priority] ?? '●'
+  const ref = useRef<HTMLDivElement>(null)
+
+  useLayoutEffect(() => {
+    if (selected && ref.current) {
+      ref.current.scrollIntoView({ block: 'center', behavior: 'instant' })
+    }
+  }, [selected])
+
   return (
     <div
+      ref={ref}
       onClick={onClick}
       style={{
         padding: '4px 8px',

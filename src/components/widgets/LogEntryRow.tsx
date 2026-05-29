@@ -16,7 +16,7 @@ export default function LogEntryRow({ entry, tag, selected, onClick }: Props) {
 
   useLayoutEffect(() => {
     if (selected && ref.current) {
-      ref.current.scrollIntoView({ block: 'nearest', behavior: 'instant' })
+      ref.current.scrollIntoView({ block: 'center', behavior: 'instant' })
     }
   }, [selected])
 
