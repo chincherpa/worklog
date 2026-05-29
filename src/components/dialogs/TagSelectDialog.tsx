@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { BG_PANEL, BORDER_NORMAL, TEXT_DIM, TEXT_PRIMARY } from '../../theme'
+import { BG_PANEL, BORDER_NORMAL, TEXT_DIM } from '../../theme'
 import { Overlay } from './ConfirmDialog'
 import type { Tag } from '../../types'
 
@@ -51,9 +51,17 @@ export default function TagSelectDialog({ open, tags, currentKey, onClose }: Pro
               borderRadius: 3,
             }}
           >
-            <span style={{ color: tag.color, minWidth: 24 }}>{tag.symbol}</span>
-            <span style={{ color: TEXT_PRIMARY, fontSize: 12 }}>{tag.key}</span>
-            <span style={{ color: TEXT_DIM, fontSize: 11, marginLeft: 4 }}>{tag.name}</span>
+            <span style={{
+              color: tag.color,
+              background: tag.bg_color ?? (tag.color + '28'),
+              fontSize: 11,
+              padding: '1px 6px',
+              borderRadius: 10,
+              whiteSpace: 'nowrap',
+              minWidth: 60,
+              textAlign: 'center',
+            }}>{tag.symbol} {tag.key}</span>
+            <span style={{ color: TEXT_DIM, fontSize: 11 }}>{tag.name}</span>
           </button>
         ))}
         <div style={{ borderTop: `1px solid ${BORDER_NORMAL}`, marginTop: 4, paddingTop: 4 }}>
