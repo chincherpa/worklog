@@ -1,3 +1,4 @@
+import { useRef, useLayoutEffect } from 'react'
 import { BG_SELECTED, TEXT_DIM, TEXT_PRIMARY } from '../../theme'
 import { formatTime, firstLine } from '../../lib/format'
 import type { LogEntry, Tag } from '../../types'
@@ -10,10 +11,18 @@ interface Props {
 }
 
 export default function LogEntryRow({ entry, tag, selected, onClick }: Props) {
+  const ref = useRef<HTMLDivElement>(null)
   const hasBody = entry.content.includes('\n') && entry.content.split('\n').filter(l => l.trim()).length > 1
+
+  useLayoutEffect(() => {
+    if (selected && ref.current) {
+      ref.current.scrollIntoView({ block: 'nearest', behavior: 'instant' })
+    }
+  }, [selected])
 
   return (
     <div
+      ref={ref}
       onClick={onClick}
       style={{
         display: 'flex',

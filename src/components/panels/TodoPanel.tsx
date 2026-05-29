@@ -161,6 +161,8 @@ function ExpandedSection({ expanded }: { expanded: ExpandedData }) {
     })
   }
 
+  if (linkedLogs.length === 0 && subTodos.length === 0 && notes.length === 0) return null
+
   return (
     <div style={{
       marginLeft: 24,

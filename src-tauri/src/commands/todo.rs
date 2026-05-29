@@ -88,7 +88,7 @@ pub fn todo_list(
         r#"{} {} GROUP BY t.id
         ORDER BY
             CASE t.priority WHEN 'high' THEN 0 WHEN 'normal' THEN 1 ELSE 2 END,
-            t.created_at"#,
+            t.created_at DESC"#,
         TODO_SELECT_WITH_STATS, where_clause
     );
 
