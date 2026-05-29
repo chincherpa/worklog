@@ -8,29 +8,29 @@ interface Props {
 }
 
 const BINDINGS = [
-  ['↑', 'Navigation hoch'],
-  ['↓', 'Navigation runter'],
-  ['A', 'Neues Todo'],
-  ['B', 'Vorheriger Filter'],
-  ['C', 'Tag des Eintrags ändern'],
-  ['D', 'Todo erledigt'],
-  ['E', 'Eintrag bearbeiten'],
-  ['Enter', 'Todo-Detail öffnen'],
-  ['F', 'Focus-Session starten / beenden'],
-  ['L', 'Log-Eingabe fokussieren'],
-  ['M', 'Content-Panel ein/aus'],
-  ['N', 'Nächster Filter'],
-  ['P', 'Vorheriger Tag (Eingabe)'],
-  ['Q', 'Beenden'],
-  ['R', 'Alles neu laden'],
-  ['Shift+D', 'Log-Eintrag löschen'],
-  ['Shift+Tab', 'Vorheriges Panel'],
-  ['Space', 'Todo aktiv/pausiert'],
-  ['T', 'Todo-Panel ein/aus'],
-  ['Tab', 'Nächstes Panel'],
-  ['W', 'Wochenrückblick'],
-  ['X', 'Todo abbrechen (Bestätigung)'],
-  ['?', 'Diese Hilfe'],
+  ['↑', 'Navigate up'],
+  ['↓', 'Navigate down'],
+  ['A', 'New todo'],
+  ['B', 'Previous filter'],
+  ['C', 'Change entry tag'],
+  ['D', 'Mark todo done'],
+  ['E', 'Edit entry'],
+  ['Enter', 'Open todo detail'],
+  ['F', 'Start / stop focus session'],
+  ['L', 'Focus log input'],
+  ['M', 'Toggle content panel'],
+  ['N', 'Next filter'],
+  ['P', 'Previous tag (input)'],
+  ['Q', 'Quit'],
+  ['R', 'Reload all'],
+  ['Shift+D', 'Delete log entry'],
+  ['Shift+Tab', 'Previous panel'],
+  ['Space', 'Todo active/paused'],
+  ['T', 'Toggle todo panel'],
+  ['Tab', 'Next panel'],
+  ['W', 'Weekly review'],
+  ['X', 'Cancel todo (confirm)'],
+  ['?', 'This help'],
 ]
 
 export default function KeybindingsHelpDialog({ open, onClose }: Props) {
@@ -57,7 +57,7 @@ export default function KeybindingsHelpDialog({ open, onClose }: Props) {
         overflowY: 'auto',
       }}>
         <div style={{ fontSize: 13, color: TEXT_PRIMARY, marginBottom: 12, fontWeight: 600 }}>
-          ⌨ Tastenkürzel
+          ⌨ Keyboard Shortcuts
         </div>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <tbody>
@@ -92,7 +92,7 @@ export default function KeybindingsHelpDialog({ open, onClose }: Props) {
             fontSize: 12,
             fontFamily: 'inherit',
           }}>
-            Schließen (Esc)
+            Close (Esc)
           </button>
         </div>
       </div>

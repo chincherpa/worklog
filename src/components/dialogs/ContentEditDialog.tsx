@@ -42,7 +42,7 @@ export default function ContentEditDialog({ open, initialContent, onClose }: Pro
         flexDirection: 'column',
         gap: 16,
       }}>
-        <div style={{ fontSize: 13, color: TEXT_SECONDARY }}>Eintrag bearbeiten</div>
+        <div style={{ fontSize: 13, color: TEXT_SECONDARY }}>Edit entry</div>
 
         <textarea
           ref={ref}
@@ -65,8 +65,8 @@ export default function ContentEditDialog({ open, initialContent, onClose }: Pro
         />
 
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-          <button onClick={() => onClose(null)} style={btn(false)}>Abbrechen</button>
-          <button onClick={() => onClose(text)} style={btn(true)}>Speichern</button>
+          <button onClick={() => onClose(null)} style={btn(false)}>Cancel</button>
+          <button onClick={() => onClose(text)} style={btn(true)}>Save</button>
         </div>
       </div>
     </Overlay>

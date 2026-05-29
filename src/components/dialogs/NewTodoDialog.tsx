@@ -56,20 +56,20 @@ export default function NewTodoDialog({ open, initialTitle, onClose }: Props) {
         flexDirection: 'column',
         gap: 16,
       }}>
-        <div style={{ fontSize: 13, color: TEXT_SECONDARY }}>Neues Todo</div>
+        <div style={{ fontSize: 13, color: TEXT_SECONDARY }}>New todo</div>
 
         <input
           ref={titleRef}
           value={title}
           onChange={e => setTitle(e.target.value)}
-          placeholder="Titel *"
+          placeholder="Title *"
           onKeyDown={e => { if (e.key === 'Enter' && canSave) onClose({ title: title.trim(), context: context.trim(), priority }) }}
           style={inputStyle(true)}
         />
         <input
           value={context}
           onChange={e => setContext(e.target.value)}
-          placeholder="Kontext (optional)"
+          placeholder="Context (optional)"
           style={inputStyle(false)}
         />
 
@@ -95,13 +95,13 @@ export default function NewTodoDialog({ open, initialTitle, onClose }: Props) {
         </div>
 
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-          <button onClick={() => onClose(null)} style={btnStyle(false)}>Abbrechen</button>
+          <button onClick={() => onClose(null)} style={btnStyle(false)}>Cancel</button>
           <button
             disabled={!canSave}
             onClick={() => canSave && onClose({ title: title.trim(), context: context.trim(), priority })}
             style={btnStyle(true, !canSave)}
           >
-            Speichern
+            Save
           </button>
         </div>
       </div>

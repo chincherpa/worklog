@@ -104,7 +104,7 @@ export default function App() {
 
       case 'refreshAll':
         await app.loadAll()
-        showToast('Neu geladen', 'success')
+        showToast('Reloaded', 'success')
         break
 
       case 'arrowUp':
@@ -179,7 +179,7 @@ export default function App() {
         const doneTag = tags.find(t => t.key === 'done')
         if (doneTag) await api.logAdd(dbPath, 'done', todo.title)
         await app.loadAll()
-        showToast(`${todo.title.slice(0, 30)} erledigt`, 'success')
+        showToast(`${todo.title.slice(0, 30)} done`, 'success')
         break
       }
 
@@ -188,12 +188,12 @@ export default function App() {
         if (!todo) break
         openDialog({
           type: 'confirm',
-          confirmMessage: `Todo abbrechen: "${todo.title.slice(0, 40)}"?`,
+          confirmMessage: `Cancel todo: "${todo.title.slice(0, 40)}"?`,
           onConfirm: async () => {
             await api.todoSetStatus(dbPath, todo.id, 'cancelled')
             await app.loadTodos()
             closeDialog()
-            showToast('Todo abgebrochen', 'warning')
+            showToast('Todo cancelled', 'warning')
           },
         })
         break
@@ -216,12 +216,12 @@ export default function App() {
         if (!entry) break
         openDialog({
           type: 'confirm',
-          confirmMessage: `Eintrag löschen: "${entry.content.slice(0, 40)}"?`,
+          confirmMessage: `Delete entry: "${entry.content.slice(0, 40)}"?`,
           onConfirm: async () => {
             await api.logDelete(dbPath, entry.id)
             await app.loadLog()
             closeDialog()
-            showToast('Eintrag gelöscht', 'warning')
+            showToast('Entry deleted', 'warning')
           },
         })
         break
@@ -262,7 +262,7 @@ export default function App() {
     if (!result || !app.dbPath) return
     await api.todoAdd(app.dbPath, result.title, result.context || undefined, result.priority)
     await app.loadTodos()
-    showToast(`Todo erstellt: ${result.title.slice(0, 30)}`, 'success')
+    showToast(`Todo created: ${result.title.slice(0, 30)}`, 'success')
   }, [app, closeDialog, showToast])
 
   const handleContentEdit = useCallback(async (result: string | null) => {
@@ -304,7 +304,7 @@ export default function App() {
       await api.logAdd(app.dbPath, tagKey, result.log_entry, 'work', todo.id)
     }
     await app.loadAll()
-    showToast('Session beendet', 'info')
+    showToast('Session ended', 'info')
   }, [app, dialog, closeDialog, showToast])
 
   const handleConfigSave = useCallback(async (tags: Tag[]) => {
@@ -314,7 +314,7 @@ export default function App() {
       const newConfig = await api.getConfig(app.config.config_path)
       app.setConfig(newConfig)
       closeDialog()
-      showToast('Tags gespeichert', 'success')
+      showToast('Tags saved', 'success')
     } catch (e) {
       showToast(String(e), 'error')
     }
@@ -351,10 +351,10 @@ export default function App() {
         fontSize: 13,
         textAlign: 'center',
       }}>
-        <div>⚠ Konfigurationsfehler</div>
+        <div>⚠ Configuration error</div>
         <div style={{ color: '#888', maxWidth: 400 }}>{app.error}</div>
         <div style={{ color: '#555', fontSize: 11 }}>
-          Erstelle config.toml neben der worklog.exe oder unter ~/.config/worklog/config.toml
+          Create config.toml next to worklog.exe or at ~/.config/worklog/config.toml
         </div>
       </div>
     )

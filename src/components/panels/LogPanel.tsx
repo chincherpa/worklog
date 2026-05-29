@@ -77,7 +77,7 @@ export default function LogPanel({
     focusInputRef.current = () => inputRef.current?.focus()
   }, [focusInputRef])
 
-  const titleDate = new Date().toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric', month: 'short' })
+  const titleDate = new Date().toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short' })
 
   return (
     <div style={{
@@ -98,7 +98,7 @@ export default function LogPanel({
         color: TEXT_SECONDARY,
         flexShrink: 0,
       }}>
-        📋 LOG · {titleDate} · {todayEntries.length} Einträge heute
+        📋 LOG · {titleDate} · {todayEntries.length} entries today
       </div>
 
       {/* Filter bar */}
@@ -145,7 +145,7 @@ export default function LogPanel({
         ))}
         {filtered.length === 0 && (
           <div style={{ color: TEXT_DIM, fontSize: 11, padding: '12px 10px', textAlign: 'center' }}>
-            Keine Einträge
+            No entries
           </div>
         )}
       </div>
@@ -218,7 +218,7 @@ export default function LogPanel({
         )}
         <input
           ref={inputRef}
-          placeholder="Eintrag…"
+          placeholder="Entry…"
           onFocus={() => onInputFocus(true)}
           onBlur={() => onInputFocus(false)}
           style={{
@@ -248,7 +248,7 @@ export default function LogPanel({
             padding: 0,
           }}
         >
-          ⌨ Tastenkürzel
+          ⌨ Shortcuts
         </button>
       </div>
     </div>

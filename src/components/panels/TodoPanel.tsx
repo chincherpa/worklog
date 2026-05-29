@@ -140,7 +140,7 @@ export default function TodoPanel({
 
         {todos.length === 0 && (
           <div style={{ color: TEXT_DIM, fontSize: 11, padding: '12px 10px', textAlign: 'center' }}>
-            Keine Todos
+            No todos
           </div>
         )}
       </div>

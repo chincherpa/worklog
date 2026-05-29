@@ -111,7 +111,7 @@ export default function ContentPanel({ entries, displayedEntryId, config, isActi
           </>
         ) : (
           <div style={{ color: TEXT_DIM, fontSize: 11, textAlign: 'center', marginTop: 32 }}>
-            Kein Eintrag ausgewählt
+            No entry selected
           </div>
         )}
       </div>

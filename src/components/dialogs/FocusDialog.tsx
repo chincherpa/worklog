@@ -147,13 +147,13 @@ export default function FocusDialog({ open, todo, session, dbPath, onClose }: Pr
             fontSize: 12,
             fontFamily: 'inherit',
           }}>
-            {paused ? '▶ Weiter' : '⏸ Pause'}
+            {paused ? '▶ Resume' : '⏸ Pause'}
           </button>
         </div>
 
         {/* Sub-todos */}
         <div>
-          <div style={{ fontSize: 11, color: TEXT_DIM, marginBottom: 6 }}>Sub-Todos</div>
+          <div style={{ fontSize: 11, color: TEXT_DIM, marginBottom: 6 }}>Sub-todos</div>
           {subTodos.map(s => (
             <div key={s.id} style={{
               display: 'flex', alignItems: 'center', gap: 8,
@@ -171,7 +171,7 @@ export default function FocusDialog({ open, todo, session, dbPath, onClose }: Pr
               ref={subRef}
               value={subInput}
               onChange={e => setSubInput(e.target.value)}
-              placeholder="Sub-Todo hinzufügen…"
+              placeholder="Add sub-todo…"
               style={{ ...inlineInputStyle, marginTop: 4 }}
             />
           </form>
@@ -179,7 +179,7 @@ export default function FocusDialog({ open, todo, session, dbPath, onClose }: Pr
 
         {/* Notes */}
         <div>
-          <div style={{ fontSize: 11, color: TEXT_DIM, marginBottom: 6 }}>Notizen</div>
+          <div style={{ fontSize: 11, color: TEXT_DIM, marginBottom: 6 }}>Notes</div>
           {notes.slice(-8).map(n => (
             <div key={n.id} style={{ color: TEXT_SECONDARY, fontSize: 12, marginBottom: 2 }}>
               · {n.content}
@@ -190,7 +190,7 @@ export default function FocusDialog({ open, todo, session, dbPath, onClose }: Pr
               ref={noteRef}
               value={noteInput}
               onChange={e => setNoteInput(e.target.value)}
-              placeholder="Notiz hinzufügen…"
+              placeholder="Add note…"
               style={inlineInputStyle}
             />
           </form>
@@ -199,16 +199,16 @@ export default function FocusDialog({ open, todo, session, dbPath, onClose }: Pr
         {/* Outcome buttons */}
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <button onClick={() => handleEnd('blocked')} style={outcomeBtn(ACCENT_RED, false)}>
-            Blockiert
+            Blocked
           </button>
           <button onClick={() => handleEnd('open')} style={outcomeBtn(ACCENT_GOLD, false)}>
-            Weiter offen
+            Still open
           </button>
           <button onClick={() => handleEnd('solved')} style={outcomeBtn(ACCENT_GREEN, true)}>
-            Gelöst
+            Solved
           </button>
           <button onClick={handleMinimize} style={{ ...outcomeBtn(TEXT_DIM, false), marginLeft: 'auto' }}>
-            ← Minimieren (Esc)
+            ← Minimize (Esc)
           </button>
         </div>
       </div>

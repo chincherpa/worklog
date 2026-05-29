@@ -144,7 +144,7 @@ export default function ConfigDialog({ open, tags: initialTags, onSave, onClose 
         maxHeight: '80vh',
       }}>
         <div style={{ fontSize: 13, color: TEXT_PRIMARY, fontWeight: 600, marginBottom: 12 }}>
-          ⚙ Tags verwalten
+          ⚙ Manage Tags
         </div>
 
         {/* Column headers */}
@@ -160,14 +160,14 @@ export default function ConfigDialog({ open, tags: initialTags, onSave, onClose 
           <span>Key</span>
           <span>Sym</span>
           <span>Name</span>
-          <span>Vorschau</span>
+          <span>Preview</span>
         </div>
 
         {/* Tag rows */}
         <div style={{ overflowY: 'auto', minHeight: 120, maxHeight: 360 }}>
           {tags.length === 0 && (
             <div style={{ padding: '16px 8px', fontSize: 12, color: TEXT_DIM }}>
-              Keine Tags — N drücken um einen hinzuzufügen.
+              No tags — press N to add one.
             </div>
           )}
           {tags.map((tag, idx) => {
@@ -229,10 +229,10 @@ export default function ConfigDialog({ open, tags: initialTags, onSave, onClose 
         }}>
           {confirmDelete && tags[selectedIdx] ? (
             <span style={{ color: ACCENT_RED }}>
-              Tag „{tags[selectedIdx].name}" löschen? D=Ja · Esc=Abbruch
+              Delete tag "{tags[selectedIdx].name}"? D=Yes · Esc=Cancel
             </span>
           ) : (
-            <span>↑↓ Navigieren · Enter Bearbeiten · N Neu · D Löschen · S Speichern · Esc Schließen</span>
+            <span>↑↓ Navigate · Enter Edit · N New · D Delete · S Save · Esc Close</span>
           )}
         </div>
       </div>
@@ -328,7 +328,7 @@ function EditRow({ draft, isNew, onChange, onCommit, onCancel }: EditRowProps) {
       {/* Color pickers */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 11, color: TEXT_DIM, width: 80, flexShrink: 0 }}>Schriftfarbe:</span>
+          <span style={{ fontSize: 11, color: TEXT_DIM, width: 80, flexShrink: 0 }}>Text color:</span>
           <input
             type="color"
             value={draft.color}
@@ -343,7 +343,7 @@ function EditRow({ draft, isNew, onChange, onCommit, onCancel }: EditRowProps) {
           />
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 11, color: TEXT_DIM, width: 80, flexShrink: 0 }}>Hintergrund:</span>
+          <span style={{ fontSize: 11, color: TEXT_DIM, width: 80, flexShrink: 0 }}>Background:</span>
           <input
             type="color"
             value={draft.bg_color ?? '#000000'}
@@ -354,17 +354,17 @@ function EditRow({ draft, isNew, onChange, onCommit, onCancel }: EditRowProps) {
           <input
             value={draft.bg_color ?? ''}
             onChange={e => onChange({ ...draft, bg_color: e.target.value || undefined })}
-            placeholder="leer = auto"
+            placeholder="empty = auto"
             style={{ ...inputStyle, width: 80 }}
           />
           <button
             type="button"
             onClick={() => onChange({ ...draft, bg_color: undefined })}
             style={{ fontSize: 11, background: 'transparent', border: `1px solid #555`, borderRadius: 3, color: '#888', cursor: 'pointer', padding: '2px 6px' }}
-          >✕ leer</button>
+          >✕ clear</button>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 11, color: TEXT_DIM, width: 80, flexShrink: 0 }}>Vorschau:</span>
+          <span style={{ fontSize: 11, color: TEXT_DIM, width: 80, flexShrink: 0 }}>Preview:</span>
           <span style={{
             color: draft.color,
             background: draft.bg_color ?? (draft.color + '28'),
@@ -375,7 +375,7 @@ function EditRow({ draft, isNew, onChange, onCommit, onCancel }: EditRowProps) {
             {draft.symbol || '?'} {draft.key || 'key'}
           </span>
           <span style={{ marginLeft: 'auto', fontSize: 11, color: TEXT_DIM }}>
-            Enter=Übernehmen · Esc=Abbruch
+            Enter=Apply · Esc=Cancel
           </span>
         </div>
       </div>

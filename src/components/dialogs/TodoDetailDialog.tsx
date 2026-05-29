@@ -81,9 +81,9 @@ export default function TodoDetailDialog({ open, todo, dbPath, onClose }: Props)
 
         {/* Sub-todos */}
         <div>
-          <div style={{ fontSize: 11, color: TEXT_SECONDARY, marginBottom: 6 }}>Sub-Todos</div>
+          <div style={{ fontSize: 11, color: TEXT_SECONDARY, marginBottom: 6 }}>Sub-todos</div>
           {subTodos.length === 0 && (
-            <div style={{ color: TEXT_DIM, fontSize: 11 }}>(noch keine Sub-Todos)</div>
+            <div style={{ color: TEXT_DIM, fontSize: 11 }}>(no sub-todos yet)</div>
           )}
           {subTodos.map(s => (
             <div
@@ -104,7 +104,7 @@ export default function TodoDetailDialog({ open, todo, dbPath, onClose }: Props)
             <input
               value={subInput}
               onChange={e => setSubInput(e.target.value)}
-              placeholder="Sub-Todo hinzufügen…"
+              placeholder="Add sub-todo…"
               style={inputStyle}
             />
           </form>
@@ -112,9 +112,9 @@ export default function TodoDetailDialog({ open, todo, dbPath, onClose }: Props)
 
         {/* Notes */}
         <div>
-          <div style={{ fontSize: 11, color: TEXT_SECONDARY, marginBottom: 6 }}>Notizen</div>
+          <div style={{ fontSize: 11, color: TEXT_SECONDARY, marginBottom: 6 }}>Notes</div>
           {notes.length === 0 && (
-            <div style={{ color: TEXT_DIM, fontSize: 11 }}>(noch keine Notizen)</div>
+            <div style={{ color: TEXT_DIM, fontSize: 11 }}>(no notes yet)</div>
           )}
           {notes.map(n => (
             <div key={n.id} style={{
@@ -130,7 +130,7 @@ export default function TodoDetailDialog({ open, todo, dbPath, onClose }: Props)
             <input
               value={noteInput}
               onChange={e => setNoteInput(e.target.value)}
-              placeholder="Notiz hinzufügen…"
+              placeholder="Add note…"
               style={inputStyle}
             />
           </form>
@@ -147,7 +147,7 @@ export default function TodoDetailDialog({ open, todo, dbPath, onClose }: Props)
             fontSize: 12,
             fontFamily: 'inherit',
           }}>
-            Schließen
+            Close
           </button>
         </div>
       </div>

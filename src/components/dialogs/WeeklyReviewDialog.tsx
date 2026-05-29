@@ -63,7 +63,7 @@ export default function WeeklyReviewDialog({ open, dbPath, todos, onClose }: Pro
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <button onClick={() => navWeek(-1)} style={navBtn}>‹</button>
           <div style={{ flex: 1, textAlign: 'center', fontSize: 13, color: TEXT_PRIMARY }}>
-            KW {weekNum} · {week}
+            CW {weekNum} · {week}
           </div>
           <button onClick={() => navWeek(1)} style={navBtn}>›</button>
         </div>
@@ -72,12 +72,12 @@ export default function WeeklyReviewDialog({ open, dbPath, todos, onClose }: Pro
           <>
             {/* Metrics */}
             <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-              <Metric label="Arbeitstage" value={String(summary.work_days)} />
+              <Metric label="Work days" value={String(summary.work_days)} />
               <Metric label="Focus" value={formatDuration(summary.focus_total_s)} />
               {summary.avg_energy !== null && (
-                <Metric label="Ø Energie" value={`${summary.avg_energy.toFixed(1)}/5`} />
+                <Metric label="Avg energy" value={`${summary.avg_energy.toFixed(1)}/5`} />
               )}
-              <Metric label="Offene Blocks" value={String(summary.open_blocks)} />
+              <Metric label="Open blocks" value={String(summary.open_blocks)} />
             </div>
 
             {/* Top tags */}
@@ -103,7 +103,7 @@ export default function WeeklyReviewDialog({ open, dbPath, todos, onClose }: Pro
             {/* Day ratings */}
             {summary.day_ratings.length > 0 && (
               <div>
-                <div style={{ fontSize: 11, color: TEXT_DIM, marginBottom: 4 }}>Tagesbewertungen</div>
+                <div style={{ fontSize: 11, color: TEXT_DIM, marginBottom: 4 }}>Day ratings</div>
                 <div style={{ fontSize: 12, color: TEXT_SECONDARY }}>
                   {summary.day_ratings.join(' · ')}
                 </div>
@@ -111,13 +111,13 @@ export default function WeeklyReviewDialog({ open, dbPath, todos, onClose }: Pro
             )}
           </>
         ) : (
-          <div style={{ color: TEXT_DIM, fontSize: 11, textAlign: 'center' }}>Lade…</div>
+          <div style={{ color: TEXT_DIM, fontSize: 11, textAlign: 'center' }}>Loading…</div>
         )}
 
         {/* Done todos */}
         {doneTodos.length > 0 && (
           <div>
-            <div style={{ fontSize: 11, color: TEXT_DIM, marginBottom: 6 }}>Erledigt diese Woche</div>
+            <div style={{ fontSize: 11, color: TEXT_DIM, marginBottom: 6 }}>Completed this week</div>
             {doneTodos.slice(0, 10).map(t => (
               <div key={t.id} style={{ fontSize: 12, color: TEXT_SECONDARY, padding: '2px 0' }}>
                 ✓ {t.title}
@@ -137,7 +137,7 @@ export default function WeeklyReviewDialog({ open, dbPath, todos, onClose }: Pro
             fontSize: 12,
             fontFamily: 'inherit',
           }}>
-            Schließen
+            Close
           </button>
         </div>
       </div>

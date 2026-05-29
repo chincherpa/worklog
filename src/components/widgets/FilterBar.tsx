@@ -34,7 +34,7 @@ export default function FilterBar({ filterKeys, activeFilter, tags, onSelect }: 
           outline: activeFilter === null ? `1px solid ${TEXT_DIM}` : 'none',
         }}
       >
-        Alle
+        All
       </button>
       {filterKeys.map(k => {
         const tag = tagMap.get(k)

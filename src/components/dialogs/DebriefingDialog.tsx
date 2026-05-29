@@ -20,9 +20,9 @@ interface Props {
 }
 
 const OUTCOMES: { key: DebriefOutcome; label: string; color: string }[] = [
-  { key: 'solved', label: 'Gelöst', color: ACCENT_GREEN },
-  { key: 'open', label: 'Weiter offen', color: ACCENT_GOLD },
-  { key: 'blocked', label: 'Blockiert', color: ACCENT_RED },
+  { key: 'solved', label: 'Solved', color: ACCENT_GREEN },
+  { key: 'open', label: 'Still open', color: ACCENT_GOLD },
+  { key: 'blocked', label: 'Blocked', color: ACCENT_RED },
 ]
 
 export default function DebriefingDialog({ open, todo, durationS, initialOutcome, onClose }: Props) {
@@ -62,7 +62,7 @@ export default function DebriefingDialog({ open, todo, durationS, initialOutcome
         gap: 16,
       }}>
         <div style={{ fontSize: 12, color: TEXT_SECONDARY }}>
-          Session abgeschlossen · {todo.title.slice(0, 40)} · {formatTimer(durationS)}
+          Session complete · {todo.title.slice(0, 40)} · {formatTimer(durationS)}
         </div>
 
         {/* Outcome */}
@@ -89,13 +89,13 @@ export default function DebriefingDialog({ open, todo, durationS, initialOutcome
 
         {/* Log entry */}
         <div>
-          <div style={{ fontSize: 11, color: TEXT_DIM, marginBottom: 6 }}>Eintrag fürs Tages-Log</div>
+          <div style={{ fontSize: 11, color: TEXT_DIM, marginBottom: 6 }}>Daily log entry</div>
           <textarea
             autoFocus
             value={logEntry}
             onChange={e => setLogEntry(e.target.value)}
             rows={3}
-            placeholder="Was hast du getan?"
+            placeholder="What did you do?"
             style={{
               width: '100%',
               resize: 'none',
@@ -112,13 +112,13 @@ export default function DebriefingDialog({ open, todo, durationS, initialOutcome
         </div>
 
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-          <button onClick={() => onClose(null)} style={btn(false)}>Ohne Eintrag</button>
+          <button onClick={() => onClose(null)} style={btn(false)}>Skip entry</button>
           <button
             disabled={!canSave}
             onClick={() => canSave && onClose({ outcome, log_entry: logEntry.trim() })}
             style={btn(true, !canSave)}
           >
-            Speichern
+            Save
           </button>
         </div>
       </div>

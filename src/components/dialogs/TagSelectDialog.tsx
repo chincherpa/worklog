@@ -71,7 +71,7 @@ export default function TagSelectDialog({ open, tags, currentKey, onClose }: Pro
               fontFamily: 'inherit',
             }}
           >
-            Abbrechen
+            Cancel
           </button>
         </div>
       </div>
