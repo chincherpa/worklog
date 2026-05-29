@@ -6,7 +6,6 @@ pub struct LogEntry {
     pub date: String,
     pub created_at: String,
     pub tag_key: String,
-    pub mode: String,
     pub content: String,
     pub todo_id: Option<i64>,
     pub resolved: i64,
@@ -15,7 +14,6 @@ pub struct LogEntry {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DayMeta {
     pub date: String,
-    pub mode: String,
     pub morning_focus: Option<String>,
     pub morning_energy: Option<i64>,
     pub evening_done: Option<String>,
@@ -32,7 +30,6 @@ pub struct Todo {
     pub context: Option<String>,
     pub status: String,
     pub priority: String,
-    pub mode: String,
     pub tags: Vec<String>,
     pub created_at: String,
     pub done_at: Option<String>,

@@ -87,8 +87,8 @@ export function useAppState(): AppState & AppActions {
     console.log('loadAll: calling with dbPath=', s.dbPath)
     try {
       const [entriesRes, todosRes, blocksRes, sessionRes] = await Promise.allSettled([
-        api.logGetAll(s.dbPath, 'work'),
-        api.todoList(s.dbPath, undefined, 'work'),
+        api.logGetAll(s.dbPath),
+        api.todoList(s.dbPath),
         api.logGetOpenBlocks(s.dbPath),
         api.sessionGetActive(s.dbPath),
       ])
@@ -132,7 +132,7 @@ export function useAppState(): AppState & AppActions {
     const s = stateRef.current
     if (!s.dbPath) return
     try {
-      const entries = await api.logGetAll(s.dbPath, 'work')
+      const entries = await api.logGetAll(s.dbPath)
       const usedTags = [...new Set(entries.map((e: LogEntry) => e.tag_key))]
       setState(prev => ({
         ...prev,
@@ -149,7 +149,7 @@ export function useAppState(): AppState & AppActions {
     const s = stateRef.current
     if (!s.dbPath) return
     try {
-      const todos = sortTodosForDisplay(await api.todoList(s.dbPath, undefined, 'work'))
+      const todos = sortTodosForDisplay(await api.todoList(s.dbPath))
       setState(prev => ({ ...prev, todos }))
     } catch (e) {
       setState(prev => ({ ...prev, error: String(e) }))

@@ -3,7 +3,6 @@ export interface LogEntry {
   date: string
   created_at: string
   tag_key: string
-  mode: string
   content: string
   todo_id: number | null
   resolved: number
@@ -11,7 +10,6 @@ export interface LogEntry {
 
 export interface DayMeta {
   date: string
-  mode: string
   morning_focus: string | null
   morning_energy: number | null
   evening_done: string | null
@@ -27,7 +25,6 @@ export interface Todo {
   context: string | null
   status: string
   priority: string
-  mode: string
   tags: string[]
   created_at: string
   done_at: string | null

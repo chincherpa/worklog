@@ -6,7 +6,6 @@ use std::collections::HashMap;
 fn row_to_day(row: &rusqlite::Row) -> rusqlite::Result<DayMeta> {
     Ok(DayMeta {
         date: row.get("date")?,
-        mode: row.get("mode")?,
         morning_focus: row.get("morning_focus")?,
         morning_energy: row.get("morning_energy")?,
         evening_done: row.get("evening_done")?,
@@ -54,15 +53,13 @@ pub fn day_get(db_path: String, date_str: Option<String>) -> Result<Option<DayMe
 pub fn day_get_or_create(
     db_path: String,
     date_str: Option<String>,
-    mode: Option<String>,
 ) -> Result<DayMeta, String> {
     let date = date_str.unwrap_or_else(today);
-    let mode = mode.unwrap_or_else(|| "work".to_string());
     {
         let conn = get_connection(&db_path).map_err(|e| e.to_string())?;
         conn.execute(
-            "INSERT OR IGNORE INTO day_meta (date, mode) VALUES (?1, ?2)",
-            params![date, mode],
+            "INSERT OR IGNORE INTO day_meta (date) VALUES (?1)",
+            params![date],
         )
         .map_err(|e| e.to_string())?;
     }
@@ -77,7 +74,7 @@ pub fn day_set_morning(
     date_str: Option<String>,
 ) -> Result<DayMeta, String> {
     let date = date_str.unwrap_or_else(today);
-    day_get_or_create(db_path.clone(), Some(date.clone()), None)?;
+    day_get_or_create(db_path.clone(), Some(date.clone()))?;
     let conn = get_connection(&db_path).map_err(|e| e.to_string())?;
     let energy = energy.max(1).min(5);
     conn.execute(
@@ -98,7 +95,7 @@ pub fn day_set_evening(
     date_str: Option<String>,
 ) -> Result<DayMeta, String> {
     let date = date_str.unwrap_or_else(today);
-    day_get_or_create(db_path.clone(), Some(date.clone()), None)?;
+    day_get_or_create(db_path.clone(), Some(date.clone()))?;
     let conn = get_connection(&db_path).map_err(|e| e.to_string())?;
     conn.execute(
         "UPDATE day_meta SET evening_done = ?1, evening_open = ?2, day_rating = ?3, evening_note = ?4, work_locked = 1 WHERE date = ?5",
@@ -139,31 +136,30 @@ pub fn week_summary(db_path: String, iso_week: String) -> Result<WeekSummary, St
     // Day meta
     let mut stmt2 = conn
         .prepare(
-            "SELECT morning_energy, day_rating, mode FROM day_meta WHERE date BETWEEN ?1 AND ?2",
+            "SELECT morning_energy, day_rating FROM day_meta WHERE date BETWEEN ?1 AND ?2",
         )
         .map_err(|e| e.to_string())?;
-    let day_rows: Vec<(Option<i64>, Option<String>, String)> = stmt2
+    let day_rows: Vec<(Option<i64>, Option<String>)> = stmt2
         .query_map(params![date_from, date_to], |row| {
             Ok((
                 row.get::<_, Option<i64>>(0)?,
                 row.get::<_, Option<String>>(1)?,
-                row.get::<_, String>(2)?,
             ))
         })
         .map_err(|e| e.to_string())?
         .filter_map(|r| r.ok())
         .collect();
 
-    let energies: Vec<i64> = day_rows.iter().filter_map(|(e, _, _)| *e).collect();
+    let energies: Vec<i64> = day_rows.iter().filter_map(|(e, _)| *e).collect();
     let avg_energy = if energies.is_empty() {
         None
     } else {
         Some(energies.iter().sum::<i64>() as f64 / energies.len() as f64)
     };
-    let work_days = day_rows.iter().filter(|(_, _, m)| m == "work").count() as i64;
+    let work_days = day_rows.len() as i64;
     let day_ratings: Vec<String> = day_rows
         .iter()
-        .filter_map(|(_, r, _)| r.clone())
+        .filter_map(|(_, r)| r.clone())
         .collect();
 
     // Focus total

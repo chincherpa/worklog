@@ -301,7 +301,7 @@ export default function App() {
     if (result?.log_entry && app.todos[app.todoIdx]) {
       const todo = app.todos[app.todoIdx]
       const tagKey = outcome === 'solved' ? 'done' : outcome === 'blocked' ? 'block' : 'note'
-      await api.logAdd(app.dbPath, tagKey, `${todo.title}\n${result.log_entry}`, 'work', todo.id)
+      await api.logAdd(app.dbPath, tagKey, `${todo.title}\n${result.log_entry}`, todo.id)
     }
     await app.loadAll()
     showToast('Session ended', 'info')

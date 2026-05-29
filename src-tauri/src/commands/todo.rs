@@ -15,7 +15,6 @@ fn row_to_todo(row: &rusqlite::Row) -> rusqlite::Result<Todo> {
         context: row.get("context")?,
         status: row.get("status")?,
         priority: row.get("priority")?,
-        mode: row.get("mode")?,
         tags,
         created_at: row.get("created_at")?,
         done_at: row.get("done_at")?,
@@ -38,17 +37,15 @@ pub fn todo_add(
     title: String,
     context: Option<String>,
     priority: Option<String>,
-    mode: Option<String>,
 ) -> Result<Todo, String> {
     let conn = get_connection(&db_path).map_err(|e| e.to_string())?;
     let priority = priority.unwrap_or_else(|| "normal".to_string());
-    let mode = mode.unwrap_or_else(|| "work".to_string());
     let title = title.trim().to_string();
 
     let row_id: i64 = conn
         .query_row(
-            "INSERT INTO todos (title, context, priority, mode) VALUES (?1, ?2, ?3, ?4) RETURNING id",
-            params![title, context, priority, mode],
+            "INSERT INTO todos (title, context, priority) VALUES (?1, ?2, ?3) RETURNING id",
+            params![title, context, priority],
             |row| row.get(0),
         )
         .map_err(|e| e.to_string())?;
@@ -71,7 +68,6 @@ pub fn todo_get(db_path: String, todo_id: i64) -> Result<Todo, String> {
 pub fn todo_list(
     db_path: String,
     status: Option<String>,
-    mode: Option<String>,
 ) -> Result<Vec<Todo>, String> {
     let conn = get_connection(&db_path).map_err(|e| e.to_string())?;
     let mut conditions: Vec<String> = Vec::new();
@@ -80,12 +76,6 @@ pub fn todo_list(
     if let Some(ref s) = status {
         bind_vals.push(s.clone());
         conditions.push(format!("t.status = ?{}", bind_vals.len()));
-    }
-    if let Some(ref m) = mode {
-        if m != "any" {
-            bind_vals.push(m.clone());
-            conditions.push(format!("(t.mode = ?{} OR t.mode = 'any')", bind_vals.len()));
-        }
     }
 
     let where_clause = if conditions.is_empty() {
@@ -128,7 +118,6 @@ pub fn todo_update(
     title: Option<String>,
     context: Option<String>,
     priority: Option<String>,
-    mode: Option<String>,
 ) -> Result<Todo, String> {
     let conn = get_connection(&db_path).map_err(|e| e.to_string())?;
     let mut parts: Vec<String> = Vec::new();
@@ -145,10 +134,6 @@ pub fn todo_update(
     if let Some(p) = priority {
         parts.push("priority = ?".to_string());
         bind.push(Box::new(p));
-    }
-    if let Some(m) = mode {
-        parts.push("mode = ?".to_string());
-        bind.push(Box::new(m));
     }
 
     if !parts.is_empty() {

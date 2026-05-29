@@ -23,18 +23,18 @@ export const api = {
     invoke<void>('save_tags', { configPath, tags }),
 
   // Log
-  logAdd: (dbPath: string, tagKey: string, content: string, mode?: string, todoId?: number) =>
-    invoke<LogEntry>('log_add', { dbPath, tagKey, content, mode, todoId }),
+  logAdd: (dbPath: string, tagKey: string, content: string, todoId?: number) =>
+    invoke<LogEntry>('log_add', { dbPath, tagKey, content, todoId }),
   logGet: (dbPath: string, entryId: number) =>
     invoke<LogEntry>('log_get', { dbPath, entryId }),
   logUpdate: (dbPath: string, entryId: number, content?: string, tagKey?: string, resolved?: number) =>
     invoke<LogEntry>('log_update', { dbPath, entryId, content, tagKey, resolved }),
-  logGetAll: (dbPath: string, mode?: string) =>
-    invoke<LogEntry[]>('log_get_all', { dbPath, mode }),
+  logGetAll: (dbPath: string) =>
+    invoke<LogEntry[]>('log_get_all', { dbPath }),
   logDelete: (dbPath: string, entryId: number) =>
     invoke<boolean>('log_delete', { dbPath, entryId }),
-  logUsedTags: (dbPath: string, mode?: string) =>
-    invoke<string[]>('log_used_tags', { dbPath, mode }),
+  logUsedTags: (dbPath: string) =>
+    invoke<string[]>('log_used_tags', { dbPath }),
   logGetOpenBlocks: (dbPath: string, beforeDate?: string) =>
     invoke<LogEntry[]>('log_get_open_blocks', { dbPath, beforeDate }),
   logResolveBlock: (dbPath: string, entryId: number) =>
@@ -45,16 +45,16 @@ export const api = {
     invoke<LogEntry[]>('log_search', { dbPath, query, limit }),
 
   // Todo
-  todoAdd: (dbPath: string, title: string, context?: string, priority?: string, mode?: string) =>
-    invoke<Todo>('todo_add', { dbPath, title, context, priority, mode }),
+  todoAdd: (dbPath: string, title: string, context?: string, priority?: string) =>
+    invoke<Todo>('todo_add', { dbPath, title, context, priority }),
   todoGet: (dbPath: string, todoId: number) =>
     invoke<Todo>('todo_get', { dbPath, todoId }),
-  todoList: (dbPath: string, status?: string, mode?: string) =>
-    invoke<Todo[]>('todo_list', { dbPath, status, mode }),
+  todoList: (dbPath: string, status?: string) =>
+    invoke<Todo[]>('todo_list', { dbPath, status }),
   todoSetStatus: (dbPath: string, todoId: number, status: string) =>
     invoke<Todo>('todo_set_status', { dbPath, todoId, status }),
-  todoUpdate: (dbPath: string, todoId: number, title?: string, context?: string, priority?: string, mode?: string) =>
-    invoke<Todo>('todo_update', { dbPath, todoId, title, context, priority, mode }),
+  todoUpdate: (dbPath: string, todoId: number, title?: string, context?: string, priority?: string) =>
+    invoke<Todo>('todo_update', { dbPath, todoId, title, context, priority }),
   todoDelete: (dbPath: string, todoId: number) =>
     invoke<boolean>('todo_delete', { dbPath, todoId }),
   todoSearch: (dbPath: string, query: string, limit?: number) =>
@@ -101,8 +101,8 @@ export const api = {
   // Day meta
   dayGet: (dbPath: string, dateStr?: string) =>
     invoke<DayMeta | null>('day_get', { dbPath, dateStr }),
-  dayGetOrCreate: (dbPath: string, dateStr?: string, mode?: string) =>
-    invoke<DayMeta>('day_get_or_create', { dbPath, dateStr, mode }),
+  dayGetOrCreate: (dbPath: string, dateStr?: string) =>
+    invoke<DayMeta>('day_get_or_create', { dbPath, dateStr }),
   daySetMorning: (dbPath: string, focus: string, energy: number, dateStr?: string) =>
     invoke<DayMeta>('day_set_morning', { dbPath, focus, energy, dateStr }),
   daySetEvening: (dbPath: string, done: string, openItems: string, rating: string, note?: string, dateStr?: string) =>

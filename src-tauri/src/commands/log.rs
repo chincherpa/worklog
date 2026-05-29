@@ -8,7 +8,6 @@ fn row_to_log(row: &rusqlite::Row) -> rusqlite::Result<LogEntry> {
         date: row.get("date")?,
         created_at: row.get("created_at")?,
         tag_key: row.get("tag_key")?,
-        mode: row.get("mode")?,
         content: row.get("content")?,
         todo_id: row.get("todo_id")?,
         resolved: row.get("resolved")?,
@@ -20,19 +19,17 @@ pub fn log_add(
     db_path: String,
     tag_key: String,
     content: String,
-    mode: Option<String>,
     date_str: Option<String>,
     todo_id: Option<i64>,
 ) -> Result<LogEntry, String> {
     let conn = get_connection(&db_path).map_err(|e| e.to_string())?;
     let date = date_str.unwrap_or_else(today);
-    let mode = mode.unwrap_or_else(|| "work".to_string());
     let content = content.trim().to_string();
 
     let row_id: i64 = conn
         .query_row(
-            "INSERT INTO log_entries (date, tag_key, mode, content, todo_id) VALUES (?1, ?2, ?3, ?4, ?5) RETURNING id",
-            params![date, tag_key, mode, content, todo_id],
+            "INSERT INTO log_entries (date, tag_key, content, todo_id) VALUES (?1, ?2, ?3, ?4) RETURNING id",
+            params![date, tag_key, content, todo_id],
             |row| row.get(0),
         )
         .map_err(|e| e.to_string())?;
@@ -100,23 +97,13 @@ pub fn log_update(
 }
 
 #[tauri::command]
-pub fn log_get_all(db_path: String, mode: Option<String>) -> Result<Vec<LogEntry>, String> {
+pub fn log_get_all(db_path: String) -> Result<Vec<LogEntry>, String> {
     let conn = get_connection(&db_path).map_err(|e| e.to_string())?;
-    let (sql, params_vec): (String, Vec<String>) = if let Some(ref m) = mode {
-        (
-            "SELECT * FROM log_entries WHERE mode = ?1 ORDER BY date DESC, created_at DESC".to_string(),
-            vec![m.clone()],
-        )
-    } else {
-        (
-            "SELECT * FROM log_entries ORDER BY date DESC, created_at DESC".to_string(),
-            vec![],
-        )
-    };
-
-    let mut stmt = conn.prepare(&sql).map_err(|e| e.to_string())?;
+    let mut stmt = conn
+        .prepare("SELECT * FROM log_entries ORDER BY date DESC, created_at DESC")
+        .map_err(|e| e.to_string())?;
     let rows = stmt
-        .query_map(rusqlite::params_from_iter(params_vec.iter()), |row| row_to_log(row))
+        .query_map([], |row| row_to_log(row))
         .map_err(|e| e.to_string())?;
     rows.map(|r| r.map_err(|e| e.to_string())).collect()
 }
@@ -131,20 +118,13 @@ pub fn log_delete(db_path: String, entry_id: i64) -> Result<bool, String> {
 }
 
 #[tauri::command]
-pub fn log_used_tags(db_path: String, mode: Option<String>) -> Result<Vec<String>, String> {
+pub fn log_used_tags(db_path: String) -> Result<Vec<String>, String> {
     let conn = get_connection(&db_path).map_err(|e| e.to_string())?;
-    let (sql, params_vec): (String, Vec<String>) = if let Some(ref m) = mode {
-        (
-            "SELECT DISTINCT tag_key FROM log_entries WHERE mode = ?1".to_string(),
-            vec![m.clone()],
-        )
-    } else {
-        ("SELECT DISTINCT tag_key FROM log_entries".to_string(), vec![])
-    };
-
-    let mut stmt = conn.prepare(&sql).map_err(|e| e.to_string())?;
+    let mut stmt = conn
+        .prepare("SELECT DISTINCT tag_key FROM log_entries")
+        .map_err(|e| e.to_string())?;
     let rows = stmt
-        .query_map(rusqlite::params_from_iter(params_vec.iter()), |row| row.get::<_, String>(0))
+        .query_map([], |row| row.get::<_, String>(0))
         .map_err(|e| e.to_string())?;
     rows.map(|r| r.map_err(|e| e.to_string())).collect()
 }
