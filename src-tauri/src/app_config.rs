@@ -13,8 +13,19 @@ pub struct Tag {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Project {
+    pub key: String,
+    pub symbol: String,
+    pub name: String,
+    pub color: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub bg_color: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AppConfig {
     pub tags: Vec<Tag>,
+    pub projects: Vec<Project>,
     pub config_path: String,
     pub db_path: String,
 }
@@ -29,6 +40,7 @@ pub fn load_config(config_path: Option<String>) -> Result<AppConfig, String> {
         .map_err(|e| format!("Invalid TOML: {e}"))?;
 
     let tags = parse_tags(doc.get("tags"));
+    let projects = parse_projects(doc.get("projects"));
 
     let db_path = if let Some(explicit) = doc.get("db_path").and_then(|v| v.as_str()) {
         let p = PathBuf::from(explicit);
@@ -48,6 +60,7 @@ pub fn load_config(config_path: Option<String>) -> Result<AppConfig, String> {
 
     Ok(AppConfig {
         tags,
+        projects,
         config_path: path.to_string_lossy().to_string(),
         db_path,
     })
@@ -64,6 +77,37 @@ fn parse_tags(tags_val: Option<&Value>) -> Vec<Tag> {
             bg_color: val.get("bg_color").and_then(|v| v.as_str()).map(|s| s.to_string()),
         })
     }).collect()
+}
+
+fn parse_projects(projects_val: Option<&Value>) -> Vec<Project> {
+    let Some(Value::Table(table)) = projects_val else {
+        return vec![Project {
+            key: "work".to_string(),
+            symbol: "💼".to_string(),
+            name: "Arbeit".to_string(),
+            color: "#5B8DEF".to_string(),
+            bg_color: None,
+        }];
+    };
+    let mut projects: Vec<Project> = table.iter().filter_map(|(key, val)| {
+        Some(Project {
+            key: key.clone(),
+            symbol: val.get("symbol")?.as_str()?.to_string(),
+            name: val.get("name")?.as_str()?.to_string(),
+            color: val.get("color")?.as_str()?.to_string(),
+            bg_color: val.get("bg_color").and_then(|v| v.as_str()).map(|s| s.to_string()),
+        })
+    }).collect();
+    if projects.is_empty() {
+        projects.push(Project {
+            key: "work".to_string(),
+            symbol: "💼".to_string(),
+            name: "Arbeit".to_string(),
+            color: "#5B8DEF".to_string(),
+            bg_color: None,
+        });
+    }
+    projects
 }
 
 fn resolve_config_path(config_path: Option<String>) -> Result<PathBuf, String> {
