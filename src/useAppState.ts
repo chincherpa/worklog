@@ -22,6 +22,8 @@ export interface AppState {
   todoIdx: number
   logFilter: string | null
   filterKeys: string[]
+  projectFilter: string | null
+  projectFilterKeys: string[]
   displayedEntryId: number | null
   activePanel: ActivePanel
   contentVisible: boolean
@@ -70,6 +72,8 @@ const INITIAL: AppState = {
   todoIdx: 0,
   logFilter: null,
   filterKeys: [],
+  projectFilter: null,
+  projectFilterKeys: [],
   displayedEntryId: null,
   activePanel: 'log',
   contentVisible: true,
@@ -111,6 +115,7 @@ export function useAppState(): AppState & AppActions {
       const blocks = blocksRes.status === 'fulfilled' ? blocksRes.value : []
       const session = sessionRes.status === 'fulfilled' ? sessionRes.value : null
       const usedTags = [...new Set(entries.map(e => e.tag_key))]
+      const usedProjects = [...new Set(entries.map(e => e.project))]
 
       setState(prev => {
         let displayedEntryId = prev.displayedEntryId
@@ -124,6 +129,7 @@ export function useAppState(): AppState & AppActions {
           carryOver: blocks,
           activeSession: session,
           filterKeys: usedTags,
+          projectFilterKeys: usedProjects,
           displayedEntryId,
           error: null,
         }
@@ -140,10 +146,12 @@ export function useAppState(): AppState & AppActions {
     try {
       const entries = await api.logGetAll(s.dbPath)
       const usedTags = [...new Set(entries.map((e: LogEntry) => e.tag_key))]
+      const usedProjects = [...new Set(entries.map((e: LogEntry) => e.project))]
       setState(prev => ({
         ...prev,
         logEntries: entries,
         filterKeys: usedTags,
+        projectFilterKeys: usedProjects,
         displayedEntryId: prev.displayedEntryId ?? (entries[0]?.id ?? null),
       }))
     } catch (e) {
