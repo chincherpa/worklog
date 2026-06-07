@@ -1,15 +1,21 @@
 import { TEXT_DIM } from '../../theme'
-import type { Tag } from '../../types'
+
+export interface FilterItem {
+  key: string
+  symbol: string
+  color: string
+  bg_color?: string
+}
 
 interface Props {
   filterKeys: string[]
   activeFilter: string | null
-  tags: Tag[]
+  items: FilterItem[]
   onSelect: (key: string | null) => void
 }
 
-export default function FilterBar({ filterKeys, activeFilter, tags, onSelect }: Props) {
-  const tagMap = new Map(tags.map(t => [t.key, t]))
+export default function FilterBar({ filterKeys, activeFilter, items, onSelect }: Props) {
+  const itemMap = new Map(items.map(t => [t.key, t]))
 
   return (
     <div style={{
@@ -37,10 +43,10 @@ export default function FilterBar({ filterKeys, activeFilter, tags, onSelect }: 
         All
       </button>
       {filterKeys.map(k => {
-        const tag = tagMap.get(k)
+        const item = itemMap.get(k)
         const active = k === activeFilter
-        const color = tag?.color ?? TEXT_DIM
-        const bg = tag?.bg_color ?? (color + '28')
+        const color = item?.color ?? TEXT_DIM
+        const bg = item?.bg_color ?? (color + '28')
         return (
           <button
             key={k}
@@ -59,7 +65,7 @@ export default function FilterBar({ filterKeys, activeFilter, tags, onSelect }: 
               opacity: active ? 1 : 0.6,
             }}
           >
-            {tag ? `${tag.symbol} ${k}` : k}
+            {item ? `${item.symbol} ${k}` : k}
           </button>
         )
       })}
