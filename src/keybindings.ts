@@ -21,6 +21,8 @@ export type ActionName =
   | 'cyclePanelBack'
   | 'nextFilter'
   | 'prevFilter'
+  | 'nextProjectFilter'
+  | 'prevProjectFilter'
   | 'prevTag'
   | 'cycleProject'
   | 'openHelp'
@@ -76,6 +78,8 @@ const BINDINGS: Record<string, ActionName> = {
   P: 'prevTag',
   o: 'cycleProject',
   O: 'cycleProject',
+  i: 'nextProjectFilter',
+  'Shift+I': 'prevProjectFilter',
   '?': 'openHelp',
   g: 'openConfig',
   G: 'openConfig',
