@@ -1,16 +1,17 @@
 import { useRef, useLayoutEffect } from 'react'
 import { BG_SELECTED, TEXT_DIM, TEXT_PRIMARY } from '../../theme'
 import { formatTime, firstLine } from '../../lib/format'
-import type { LogEntry, Tag } from '../../types'
+import type { LogEntry, Project, Tag } from '../../types'
 
 interface Props {
   entry: LogEntry
   tag: Tag | undefined
+  project: Project | undefined
   selected: boolean
   onClick: () => void
 }
 
-export default function LogEntryRow({ entry, tag, selected, onClick }: Props) {
+export default function LogEntryRow({ entry, tag, project, selected, onClick }: Props) {
   const ref = useRef<HTMLDivElement>(null)
   const hasBody = entry.content.includes('\n') && entry.content.split('\n').filter(l => l.trim()).length > 1
 
@@ -52,17 +53,17 @@ export default function LogEntryRow({ entry, tag, selected, onClick }: Props) {
           {tag.symbol} {tag.key}
         </span>
       )}
-      {entry.project && entry.project !== 'work' && (
+      {project && (
         <span style={{
-          color: '#888',
-          background: '#88888818',
-          fontSize: 10,
-          padding: '1px 5px',
+          color: project.color,
+          background: project.bg_color ?? (project.color + '28'),
+          fontSize: 11,
+          padding: '1px 6px',
           borderRadius: 10,
           flexShrink: 0,
           whiteSpace: 'nowrap',
         }}>
-          {entry.project}
+          {project.symbol} {project.key}
         </span>
       )}
       <span style={{
