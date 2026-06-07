@@ -52,6 +52,19 @@ export default function LogEntryRow({ entry, tag, selected, onClick }: Props) {
           {tag.symbol} {tag.key}
         </span>
       )}
+      {entry.project && entry.project !== 'work' && (
+        <span style={{
+          color: '#888',
+          background: '#88888818',
+          fontSize: 10,
+          padding: '1px 5px',
+          borderRadius: 10,
+          flexShrink: 0,
+          whiteSpace: 'nowrap',
+        }}>
+          {entry.project}
+        </span>
+      )}
       <span style={{
         color: TEXT_PRIMARY,
         fontSize: 12,
