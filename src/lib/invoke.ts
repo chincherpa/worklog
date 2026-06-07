@@ -23,12 +23,12 @@ export const api = {
     invoke<void>('save_tags', { configPath, tags }),
 
   // Log
-  logAdd: (dbPath: string, tagKey: string, content: string, todoId?: number) =>
-    invoke<LogEntry>('log_add', { dbPath, tagKey, content, todoId }),
+  logAdd: (dbPath: string, tagKey: string, content: string, projectKey?: string, todoId?: number) =>
+    invoke<LogEntry>('log_add', { dbPath, tagKey, content, projectKey, todoId }),
   logGet: (dbPath: string, entryId: number) =>
     invoke<LogEntry>('log_get', { dbPath, entryId }),
-  logUpdate: (dbPath: string, entryId: number, content?: string, tagKey?: string, resolved?: number) =>
-    invoke<LogEntry>('log_update', { dbPath, entryId, content, tagKey, resolved }),
+  logUpdate: (dbPath: string, entryId: number, content?: string, tagKey?: string, resolved?: number, projectKey?: string) =>
+    invoke<LogEntry>('log_update', { dbPath, entryId, content, tagKey, resolved, projectKey }),
   logGetAll: (dbPath: string) =>
     invoke<LogEntry[]>('log_get_all', { dbPath }),
   logDelete: (dbPath: string, entryId: number) =>

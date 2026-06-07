@@ -3,6 +3,7 @@ export interface LogEntry {
   date: string
   created_at: string
   tag_key: string
+  project: string
   content: string
   todo_id: number | null
   resolved: number
@@ -67,8 +68,17 @@ export interface Tag {
   bg_color?: string
 }
 
+export interface Project {
+  key: string
+  symbol: string
+  name: string
+  color: string
+  bg_color?: string
+}
+
 export interface AppConfig {
   tags: Tag[]
+  projects: Project[]
   config_path: string
   db_path: string
 }

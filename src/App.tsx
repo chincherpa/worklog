@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { listen } from '@tauri-apps/api/event'
 import { exit } from '@tauri-apps/plugin-process'
 import { useAppState } from './useAppState'
@@ -37,11 +37,58 @@ interface DialogData {
   debriefDurationS?: number
 }
 
+function ResizeHandle({ onMouseDown }: { onMouseDown: (e: React.MouseEvent) => void }) {
+  const [hovered, setHovered] = useState(false)
+  return (
+    <div
+      onMouseDown={onMouseDown}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        width: 5,
+        cursor: 'col-resize',
+        background: hovered ? '#3A4450' : 'transparent',
+        flexShrink: 0,
+        borderRadius: 2,
+        transition: 'background 0.15s',
+        userSelect: 'none',
+      }}
+    />
+  )
+}
+
 export default function App() {
   const app = useAppState()
   const { toasts, showToast, dismiss } = useToast()
   const [dialog, setDialog] = useState<DialogData>({ type: 'none' })
   const focusInputRef = useRef<(() => void) | null>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [panelWidths, setPanelWidths] = useState({ log: 1.2, content: 1.0, todo: 0.9 })
+
+  function startResize(e: React.MouseEvent, leftKey: 'log' | 'content', rightKey: 'content' | 'todo') {
+    e.preventDefault()
+    const startX = e.clientX
+    const containerWidth = containerRef.current?.clientWidth ?? window.innerWidth
+    const startWidths = { ...panelWidths }
+    const visibleFlex = startWidths.log +
+      (app.contentVisible ? startWidths.content : 0) +
+      (app.todoVisible ? startWidths.todo : 0)
+
+    const onMove = (ev: MouseEvent) => {
+      const deltaFlex = ((ev.clientX - startX) / containerWidth) * visibleFlex
+      setPanelWidths(prev => ({
+        ...prev,
+        [leftKey]: Math.max(0.15, startWidths[leftKey] + deltaFlex),
+        [rightKey]: Math.max(0.15, startWidths[rightKey] - deltaFlex),
+      }))
+    }
+    const onUp = () => {
+      document.removeEventListener('mousemove', onMove)
+      document.removeEventListener('mouseup', onUp)
+    }
+    document.addEventListener('mousemove', onMove)
+    document.addEventListener('mouseup', onUp)
+  }
 
   // Block/unblock global keys based on dialog
   useEffect(() => {
@@ -301,7 +348,7 @@ export default function App() {
     if (result?.log_entry && app.todos[app.todoIdx]) {
       const todo = app.todos[app.todoIdx]
       const tagKey = outcome === 'solved' ? 'done' : outcome === 'blocked' ? 'block' : 'note'
-      await api.logAdd(app.dbPath, tagKey, `${todo.title}\n${result.log_entry}`, todo.id)
+      await api.logAdd(app.dbPath, tagKey, `${todo.title}\n${result.log_entry}`, undefined, todo.id)
     }
     await app.loadAll()
     showToast('Session ended', 'info')
@@ -361,13 +408,13 @@ export default function App() {
   }
 
   return (
-    <div style={{
+    <div ref={containerRef} style={{
       display: 'flex',
       flexDirection: 'row',
       width: '100vw',
       height: '100vh',
       background: BG_BASE,
-      gap: 8,
+      gap: 0,
       padding: 8,
       overflow: 'hidden',
     }}>
@@ -391,15 +438,28 @@ export default function App() {
         onInputFocus={app.setInputFocused}
         onOpenHelp={() => openDialog({ type: 'help' })}
         focusInputRef={focusInputRef}
+        style={{ flex: panelWidths.log }}
       />
 
       {app.contentVisible && (
-        <ContentPanel
-          entries={app.logEntries}
-          displayedEntryId={app.displayedEntryId}
-          config={app.config}
-          isActive={app.activePanel === 'content'}
-        />
+        <>
+          <ResizeHandle onMouseDown={e => startResize(e, 'log', 'content')} />
+          <ContentPanel
+            entries={app.logEntries}
+            displayedEntryId={app.displayedEntryId}
+            config={app.config}
+            isActive={app.activePanel === 'content'}
+            style={{ flex: panelWidths.content }}
+          />
+        </>
+      )}
+
+      {!app.contentVisible && app.todoVisible && (
+        <ResizeHandle onMouseDown={e => startResize(e, 'log', 'todo')} />
+      )}
+
+      {app.contentVisible && app.todoVisible && (
+        <ResizeHandle onMouseDown={e => startResize(e, 'content', 'todo')} />
       )}
 
       {app.todoVisible && (
@@ -415,6 +475,7 @@ export default function App() {
             app.setTodoIdx(idx)
             app.setActivePanel('todo')
           }}
+          style={{ flex: panelWidths.todo }}
         />
       )}
 
