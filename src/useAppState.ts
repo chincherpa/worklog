@@ -46,6 +46,8 @@ export interface AppActions {
   setProjectIdx: (idx: number) => void
   cycleFilter: (dir: 1 | -1) => void
   setFilter: (key: string | null) => void
+  cycleProjectFilter: (dir: 1 | -1) => void
+  setProjectFilter: (key: string | null) => void
   setDisplayedEntry: (id: number | null) => void
   setTodoIdx: (idx: number) => void
   moveTodoIdx: (dir: 1 | -1) => void
@@ -230,6 +232,19 @@ export function useAppState(): AppState & AppActions {
     setState(prev => ({ ...prev, logFilter: key }))
   }, [])
 
+  const cycleProjectFilter = useCallback((dir: 1 | -1) => {
+    setState(prev => {
+      const keys = [null, ...prev.projectFilterKeys]
+      const currentIdx = keys.indexOf(prev.projectFilter)
+      const next = ((currentIdx + dir) + keys.length) % keys.length
+      return { ...prev, projectFilter: keys[next] ?? null }
+    })
+  }, [])
+
+  const setProjectFilter = useCallback((key: string | null) => {
+    setState(prev => ({ ...prev, projectFilter: key }))
+  }, [])
+
   const setDisplayedEntry = useCallback((id: number | null) => {
     setState(prev => ({ ...prev, displayedEntryId: id }))
   }, [])
@@ -250,9 +265,10 @@ export function useAppState(): AppState & AppActions {
 
   const moveLogIdx = useCallback((dir: 1 | -1) => {
     setState(prev => {
-      const filtered = prev.logFilter
-        ? prev.logEntries.filter(e => e.tag_key === prev.logFilter)
-        : prev.logEntries
+      const filtered = prev.logEntries.filter(e =>
+        (!prev.logFilter || e.tag_key === prev.logFilter) &&
+        (!prev.projectFilter || e.project === prev.projectFilter)
+      )
       if (filtered.length === 0) return prev
       const curIdx = filtered.findIndex(e => e.id === prev.displayedEntryId)
       const nextIdx = Math.max(0, Math.min(curIdx + dir, filtered.length - 1))
@@ -331,6 +347,8 @@ export function useAppState(): AppState & AppActions {
     setProjectIdx,
     cycleFilter,
     setFilter,
+    cycleProjectFilter,
+    setProjectFilter,
     setDisplayedEntry,
     setTodoIdx,
     moveTodoIdx,
