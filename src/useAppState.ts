@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { api } from './lib/invoke'
-import type { ActivePanel, AppConfig, FocusSession, LogEntry, Tag, Todo } from './types'
+import type { ActivePanel, AppConfig, FocusSession, LogEntry, Project, Tag, Todo } from './types'
 
 const DONE_STATUSES = new Set(['done', 'cancelled', 'dropped'])
 
@@ -18,6 +18,7 @@ export interface AppState {
   carryOver: LogEntry[]
   activeSession: FocusSession | null
   tagIdx: number
+  projectIdx: number
   todoIdx: number
   logFilter: string | null
   filterKeys: string[]
@@ -37,6 +38,10 @@ export interface AppActions {
   workTags: () => Tag[]
   currentTag: () => Tag | null
   cycleTag: (dir: 1 | -1) => void
+  projects: () => Project[]
+  currentProject: () => Project | null
+  cycleProject: (dir: 1 | -1) => void
+  setProjectIdx: (idx: number) => void
   cycleFilter: (dir: 1 | -1) => void
   setFilter: (key: string | null) => void
   setDisplayedEntry: (id: number | null) => void
@@ -61,6 +66,7 @@ const INITIAL: AppState = {
   carryOver: [],
   activeSession: null,
   tagIdx: 0,
+  projectIdx: 0,
   todoIdx: 0,
   logFilter: null,
   filterKeys: [],
@@ -181,6 +187,28 @@ export function useAppState(): AppState & AppActions {
     setState(prev => ({ ...prev, tagIdx: idx }))
   }, [])
 
+  const projects = useCallback((): Project[] => {
+    return stateRef.current.config?.projects ?? []
+  }, [])
+
+  const currentProject = useCallback((): Project | null => {
+    const projs = stateRef.current.config?.projects ?? []
+    return projs[stateRef.current.projectIdx] ?? null
+  }, [])
+
+  const cycleProject = useCallback((dir: 1 | -1) => {
+    setState(prev => {
+      const projs = prev.config?.projects ?? []
+      if (projs.length === 0) return prev
+      const next = ((prev.projectIdx + dir) + projs.length) % projs.length
+      return { ...prev, projectIdx: next }
+    })
+  }, [])
+
+  const setProjectIdx = useCallback((idx: number) => {
+    setState(prev => ({ ...prev, projectIdx: idx }))
+  }, [])
+
   const cycleFilter = useCallback((dir: 1 | -1) => {
     setState(prev => {
       const keys = [null, ...prev.filterKeys]
@@ -289,6 +317,10 @@ export function useAppState(): AppState & AppActions {
     workTags,
     currentTag,
     cycleTag,
+    projects,
+    currentProject,
+    cycleProject,
+    setProjectIdx,
     cycleFilter,
     setFilter,
     setDisplayedEntry,
