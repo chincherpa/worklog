@@ -8,6 +8,7 @@ fn row_to_log(row: &rusqlite::Row) -> rusqlite::Result<LogEntry> {
         date: row.get("date")?,
         created_at: row.get("created_at")?,
         tag_key: row.get("tag_key")?,
+        project: row.get("project").unwrap_or_else(|_| "work".to_string()),
         content: row.get("content")?,
         todo_id: row.get("todo_id")?,
         resolved: row.get("resolved")?,
@@ -19,17 +20,19 @@ pub fn log_add(
     db_path: String,
     tag_key: String,
     content: String,
+    project_key: Option<String>,
     date_str: Option<String>,
     todo_id: Option<i64>,
 ) -> Result<LogEntry, String> {
     let conn = get_connection(&db_path).map_err(|e| e.to_string())?;
     let date = date_str.unwrap_or_else(today);
     let content = content.trim().to_string();
+    let project = project_key.unwrap_or_else(|| "work".to_string());
 
     let row_id: i64 = conn
         .query_row(
-            "INSERT INTO log_entries (date, tag_key, content, todo_id) VALUES (?1, ?2, ?3, ?4) RETURNING id",
-            params![date, tag_key, content, todo_id],
+            "INSERT INTO log_entries (date, tag_key, project, content, todo_id) VALUES (?1, ?2, ?3, ?4, ?5) RETURNING id",
+            params![date, tag_key, project, content, todo_id],
             |row| row.get(0),
         )
         .map_err(|e| e.to_string())?;
@@ -55,6 +58,7 @@ pub fn log_update(
     content: Option<String>,
     tag_key: Option<String>,
     resolved: Option<i64>,
+    project_key: Option<String>,
 ) -> Result<LogEntry, String> {
     let conn = get_connection(&db_path).map_err(|e| e.to_string())?;
     let mut parts: Vec<String> = Vec::new();
@@ -69,6 +73,10 @@ pub fn log_update(
     if let Some(r) = resolved {
         let _ = r;
         parts.push("resolved = ?".to_string());
+    }
+    if let Some(ref p) = project_key {
+        let _ = p;
+        parts.push("project = ?".to_string());
     }
     if !parts.is_empty() {
         let sql = format!(
@@ -90,6 +98,10 @@ pub fn log_update(
         if let Some(r) = resolved {
             stmt.raw_bind_parameter(idx, if r != 0 { 1i64 } else { 0i64 })
                 .map_err(|e| e.to_string())?;
+            idx += 1;
+        }
+        if let Some(ref p) = project_key {
+            stmt.raw_bind_parameter(idx, p).map_err(|e| e.to_string())?;
         }
         stmt.raw_execute().map_err(|e| e.to_string())?;
     }
