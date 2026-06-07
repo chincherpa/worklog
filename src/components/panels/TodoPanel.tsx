@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import type { CSSProperties } from 'react'
 import {
   BG_PANEL, BORDER_NORMAL, BORDER_ACTIVE, TEXT_DIM, TEXT_SECONDARY,
 } from '../../theme'
@@ -17,6 +18,7 @@ interface Props {
   isActive: boolean
   logEntries: LogEntry[]
   onTodoSelect: (idx: number) => void
+  style?: CSSProperties
 }
 
 interface ExpandedData {
@@ -29,7 +31,7 @@ interface ExpandedData {
 const DONE_STATUSES = new Set(['done', 'cancelled', 'dropped'])
 
 export default function TodoPanel({
-  todos, todoIdx, activeSession, dbPath, isActive, logEntries, onTodoSelect,
+  todos, todoIdx, activeSession, dbPath, isActive, logEntries, onTodoSelect, style,
 }: Props) {
   const [expanded, setExpanded] = useState<ExpandedData | null>(null)
   const selectedTodo = todos[todoIdx]
@@ -66,8 +68,9 @@ export default function TodoPanel({
       border: `${isActive ? 2 : 1}px solid ${isActive ? BORDER_ACTIVE : BORDER_NORMAL}`,
       borderRadius: 4,
       overflow: 'hidden',
-      flex: '0.9',
+      flex: '1',
       minWidth: 0,
+      ...style,
     }}>
       {/* Title */}
       <div style={{

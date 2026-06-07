@@ -142,36 +142,6 @@ pub fn log_used_tags(db_path: String) -> Result<Vec<String>, String> {
 }
 
 #[tauri::command]
-pub fn log_get_open_blocks(
-    db_path: String,
-    before_date: Option<String>,
-) -> Result<Vec<LogEntry>, String> {
-    let conn = get_connection(&db_path).map_err(|e| e.to_string())?;
-    let date = before_date.unwrap_or_else(today);
-    let mut stmt = conn
-        .prepare(
-            "SELECT * FROM log_entries WHERE tag_key = 'block' AND date < ?1 AND resolved = 0 ORDER BY date DESC, created_at DESC",
-        )
-        .map_err(|e| e.to_string())?;
-    let rows = stmt
-        .query_map(params![date], |row| row_to_log(row))
-        .map_err(|e| e.to_string())?;
-    rows.map(|r| r.map_err(|e| e.to_string())).collect()
-}
-
-#[tauri::command]
-pub fn log_resolve_block(db_path: String, entry_id: i64) -> Result<bool, String> {
-    let conn = get_connection(&db_path).map_err(|e| e.to_string())?;
-    let rows = conn
-        .execute(
-            "UPDATE log_entries SET resolved = 1 WHERE id = ?1 AND tag_key = 'block'",
-            params![entry_id],
-        )
-        .map_err(|e| e.to_string())?;
-    Ok(rows > 0)
-}
-
-#[tauri::command]
 pub fn log_get_range(
     db_path: String,
     date_from: String,

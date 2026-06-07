@@ -15,7 +15,6 @@ export interface AppState {
   dbPath: string
   logEntries: LogEntry[]
   todos: Todo[]
-  carryOver: LogEntry[]
   activeSession: FocusSession | null
   tagIdx: number
   projectIdx: number
@@ -67,7 +66,6 @@ const INITIAL: AppState = {
   dbPath: '',
   logEntries: [],
   todos: [],
-  carryOver: [],
   activeSession: null,
   tagIdx: 0,
   projectIdx: 0,
@@ -98,10 +96,9 @@ export function useAppState(): AppState & AppActions {
     }
     console.log('loadAll: calling with dbPath=', s.dbPath)
     try {
-      const [entriesRes, todosRes, blocksRes, sessionRes] = await Promise.allSettled([
+      const [entriesRes, todosRes, sessionRes] = await Promise.allSettled([
         api.logGetAll(s.dbPath),
         api.todoList(s.dbPath),
-        api.logGetOpenBlocks(s.dbPath),
         api.sessionGetActive(s.dbPath),
       ])
 
@@ -109,12 +106,10 @@ export function useAppState(): AppState & AppActions {
       else console.log('logGetAll ok, count=', entriesRes.value.length)
       if (todosRes.status === 'rejected') console.error('todoList failed:', todosRes.reason)
       else console.log('todoList ok, count=', todosRes.value.length, 'dbPath=', s.dbPath)
-      if (blocksRes.status === 'rejected') console.error('logGetOpenBlocks failed:', blocksRes.reason)
       if (sessionRes.status === 'rejected') console.error('sessionGetActive failed:', sessionRes.reason)
 
       const entries = entriesRes.status === 'fulfilled' ? entriesRes.value : []
       const todos = todosRes.status === 'fulfilled' ? sortTodosForDisplay(todosRes.value) : []
-      const blocks = blocksRes.status === 'fulfilled' ? blocksRes.value : []
       const session = sessionRes.status === 'fulfilled' ? sessionRes.value : null
       const usedTags = [...new Set(entries.map(e => e.tag_key))]
       const usedProjects = [...new Set(entries.map(e => e.project))]
@@ -128,7 +123,6 @@ export function useAppState(): AppState & AppActions {
           ...prev,
           logEntries: entries,
           todos,
-          carryOver: blocks,
           activeSession: session,
           filterKeys: usedTags,
           projectFilterKeys: usedProjects,

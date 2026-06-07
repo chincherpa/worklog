@@ -23,8 +23,6 @@ pub fn run() {
             log_get_all,
             log_delete,
             log_used_tags,
-            log_get_open_blocks,
-            log_resolve_block,
             log_get_range,
             log_search,
             // todo

@@ -1,5 +1,5 @@
 import { useRef, useEffect, useCallback, useState } from 'react'
-import { BG_PANEL, BORDER_NORMAL, BORDER_ACTIVE, TEXT_DIM, TEXT_SECONDARY, ACCENT_GOLD } from '../../theme'
+import { BG_PANEL, BORDER_NORMAL, BORDER_ACTIVE, TEXT_DIM, TEXT_SECONDARY } from '../../theme'
 import LogEntryRow from '../widgets/LogEntryRow'
 import DateSeparator from '../widgets/DateSeparator'
 import FilterBar from '../widgets/FilterBar'
@@ -13,7 +13,6 @@ interface Props {
   projectFilter: string | null
   onProjectFilterChange: (key: string | null) => void
   displayedEntryId: number | null
-  carryOver: LogEntry[]
   tags: Tag[]
   tagIdx: number
   onTagChange: (idx: number) => void
@@ -32,7 +31,7 @@ interface Props {
 }
 
 export default function LogPanel({
-  logEntries, filterKeys, logFilter, projectFilterKeys, projectFilter, onProjectFilterChange, displayedEntryId, carryOver,
+  logEntries, filterKeys, logFilter, projectFilterKeys, projectFilter, onProjectFilterChange, displayedEntryId,
   tags, tagIdx, onTagChange,
   projects, projectIdx, onProjectChange,
   isActive, inputFocused,
@@ -143,22 +142,6 @@ export default function LogPanel({
         />
       )}
 
-      {/* Carry-over */}
-      {carryOver.length > 0 && (
-        <div style={{
-          padding: '4px 10px',
-          color: ACCENT_GOLD,
-          fontSize: 11,
-          borderBottom: `1px solid ${BORDER_NORMAL}`,
-          flexShrink: 0,
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          whiteSpace: 'nowrap',
-        }}>
-          ↩ {carryOver.slice(0, 3).map(e => e.content.split('\n')[0].slice(0, 48)).join(' · ')}
-        </div>
-      )}
-
       {/* Entry list */}
       <div className="scroll-container" style={{ flex: 1, overflowY: 'auto' }}>
         {grouped.map(g => (
@@ -192,6 +175,63 @@ export default function LogPanel({
         borderTop: `1px solid ${BORDER_NORMAL}`,
         flexShrink: 0,
       }}>
+        {projects.length > 1 && (
+          <div ref={projectDropRef} style={{ position: 'relative', flexShrink: 0 }}>
+            <button
+              type="button"
+              tabIndex={-1}
+              onClick={() => setProjectDropOpen(v => !v)}
+              style={{
+                color: projects[projectIdx]?.color ?? 'inherit',
+                background: projects[projectIdx]?.bg_color ?? ((projects[projectIdx]?.color ?? '#888') + '28'),
+                fontSize: 11,
+                padding: '2px 8px',
+                border: 'none',
+                borderRadius: 10,
+                cursor: 'pointer',
+                outline: 'none',
+              }}
+            >
+              {projects[projectIdx]?.symbol} {projects[projectIdx]?.key} ▾
+            </button>
+            {projectDropOpen && (
+              <div style={{
+                position: 'absolute',
+                bottom: '100%',
+                left: 0,
+                background: BG_PANEL,
+                border: `1px solid ${BORDER_NORMAL}`,
+                borderRadius: 4,
+                marginBottom: 4,
+                zIndex: 100,
+                minWidth: 130,
+                overflow: 'hidden',
+                padding: 4,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 3,
+              }}>
+                {projects.map((p, i) => (
+                  <div
+                    key={p.key}
+                    onMouseDown={() => { onProjectChange(i); setProjectDropOpen(false) }}
+                    style={{
+                      color: p.color,
+                      background: p.bg_color ?? (p.color + '28'),
+                      fontSize: 11,
+                      padding: '3px 8px',
+                      borderRadius: 10,
+                      cursor: 'pointer',
+                      outline: i === projectIdx ? `1px solid ${p.color}` : 'none',
+                    }}
+                  >
+                    {p.symbol} {p.key}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
         {tags.length > 0 && (
           <div ref={tagDropRef} style={{ position: 'relative', flexShrink: 0 }}>
             <button
@@ -243,63 +283,6 @@ export default function LogPanel({
                     }}
                   >
                     {t.symbol} {t.key}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-        {projects.length > 1 && (
-          <div ref={projectDropRef} style={{ position: 'relative', flexShrink: 0 }}>
-            <button
-              type="button"
-              tabIndex={-1}
-              onClick={() => setProjectDropOpen(v => !v)}
-              style={{
-                color: projects[projectIdx]?.color ?? 'inherit',
-                background: projects[projectIdx]?.bg_color ?? ((projects[projectIdx]?.color ?? '#888') + '18'),
-                fontSize: 10,
-                padding: '2px 7px',
-                border: 'none',
-                borderRadius: 10,
-                cursor: 'pointer',
-                outline: 'none',
-              }}
-            >
-              {projects[projectIdx]?.symbol} {projects[projectIdx]?.key} ▾
-            </button>
-            {projectDropOpen && (
-              <div style={{
-                position: 'absolute',
-                bottom: '100%',
-                left: 0,
-                background: BG_PANEL,
-                border: `1px solid ${BORDER_NORMAL}`,
-                borderRadius: 4,
-                marginBottom: 4,
-                zIndex: 100,
-                minWidth: 130,
-                overflow: 'hidden',
-                padding: 4,
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 3,
-              }}>
-                {projects.map((p, i) => (
-                  <div
-                    key={p.key}
-                    onMouseDown={() => { onProjectChange(i); setProjectDropOpen(false) }}
-                    style={{
-                      color: p.color,
-                      background: p.bg_color ?? (p.color + '18'),
-                      fontSize: 10,
-                      padding: '3px 8px',
-                      borderRadius: 10,
-                      cursor: 'pointer',
-                      outline: i === projectIdx ? `1px solid ${p.color}` : 'none',
-                    }}
-                  >
-                    {p.symbol} {p.key}
                   </div>
                 ))}
               </div>

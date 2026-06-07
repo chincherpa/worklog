@@ -438,7 +438,6 @@ export default function App() {
         projectFilterKeys={app.projectFilterKeys}
         projectFilter={app.projectFilter}
         displayedEntryId={app.displayedEntryId}
-        carryOver={app.carryOver}
         tags={app.config?.tags ?? []}
         tagIdx={app.tagIdx}
         onTagChange={app.setTagIdx}

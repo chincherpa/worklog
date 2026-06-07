@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { BG_PANEL, BORDER_NORMAL, BORDER_ACTIVE, TEXT_DIM, TEXT_PRIMARY, TEXT_SECONDARY } from '../../theme'
@@ -8,9 +9,10 @@ interface Props {
   displayedEntryId: number | null
   config: AppConfig | null
   isActive: boolean
+  style?: CSSProperties
 }
 
-export default function ContentPanel({ entries, displayedEntryId, config, isActive }: Props) {
+export default function ContentPanel({ entries, displayedEntryId, config, isActive, style }: Props) {
   const tags = config?.tags ?? []
   const tagMap = new Map(tags.map(t => [t.key, t]))
   const entry = entries.find(e => e.id === displayedEntryId)
@@ -30,6 +32,7 @@ export default function ContentPanel({ entries, displayedEntryId, config, isActi
       overflow: 'hidden',
       flex: 1,
       minWidth: 0,
+      ...style,
     }}>
       {/* Title */}
       <div style={{

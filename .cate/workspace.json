@@ -1,0 +1,76 @@
+{
+  "version": 1,
+  "name": "worklog",
+  "color": "",
+  "canvas": {
+    "nodes": [
+      {
+        "panelId": "6ca25134-8aa1-4653-8bf9-97ed950c44d3",
+        "panelType": "terminal",
+        "title": "C:\\WINDOWS\\system32\\cmd.exe",
+        "origin": {
+          "x": -248,
+          "y": -152
+        },
+        "size": {
+          "width": 1350,
+          "height": 856
+        }
+      }
+    ],
+    "regions": [],
+    "zoomLevel": 1,
+    "viewportOffset": {
+      "x": 532,
+      "y": 165.5
+    }
+  },
+  "dockState": {
+    "zones": {
+      "left": {
+        "position": "left",
+        "visible": false,
+        "size": 260,
+        "layout": null
+      },
+      "right": {
+        "position": "right",
+        "visible": false,
+        "size": 260,
+        "layout": null
+      },
+      "bottom": {
+        "position": "bottom",
+        "visible": false,
+        "size": 240,
+        "layout": null
+      },
+      "center": {
+        "position": "center",
+        "visible": true,
+        "size": 0,
+        "layout": {
+          "type": "tabs",
+          "id": "bd532ce3-91bf-4909-95c7-8f92bf9fde76",
+          "panelIds": [
+            "a71db71e-7c4c-4e26-9344-bd045068b6b8"
+          ],
+          "activeIndex": 0
+        }
+      }
+    },
+    "locations": {
+      "a71db71e-7c4c-4e26-9344-bd045068b6b8": {
+        "type": "dock",
+        "zone": "center",
+        "stackId": "bd532ce3-91bf-4909-95c7-8f92bf9fde76"
+      }
+    }
+  },
+  "dockPanels": {
+    "a71db71e-7c4c-4e26-9344-bd045068b6b8": {
+      "type": "canvas",
+      "title": "Canvas"
+    }
+  }
+}

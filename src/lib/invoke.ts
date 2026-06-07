@@ -35,10 +35,6 @@ export const api = {
     invoke<boolean>('log_delete', { dbPath, entryId }),
   logUsedTags: (dbPath: string) =>
     invoke<string[]>('log_used_tags', { dbPath }),
-  logGetOpenBlocks: (dbPath: string, beforeDate?: string) =>
-    invoke<LogEntry[]>('log_get_open_blocks', { dbPath, beforeDate }),
-  logResolveBlock: (dbPath: string, entryId: number) =>
-    invoke<boolean>('log_resolve_block', { dbPath, entryId }),
   logGetRange: (dbPath: string, dateFrom: string, dateTo: string, tagKey?: string) =>
     invoke<LogEntry[]>('log_get_range', { dbPath, dateFrom, dateTo, tagKey }),
   logSearch: (dbPath: string, query: string, limit?: number) =>
