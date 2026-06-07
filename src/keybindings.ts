@@ -22,6 +22,7 @@ export type ActionName =
   | 'nextFilter'
   | 'prevFilter'
   | 'prevTag'
+  | 'cycleProject'
   | 'openHelp'
   | 'openConfig'
 
@@ -73,6 +74,8 @@ const BINDINGS: Record<string, ActionName> = {
   B: 'prevFilter',
   p: 'prevTag',
   P: 'prevTag',
+  o: 'cycleProject',
+  O: 'cycleProject',
   '?': 'openHelp',
   g: 'openConfig',
   G: 'openConfig',

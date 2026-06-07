@@ -192,6 +192,10 @@ export default function App() {
         app.cycleTag(-1)
         break
 
+      case 'cycleProject':
+        app.cycleProject(1)
+        break
+
       case 'viewLatest':
         if (logEntries.length > 0) {
           app.setDisplayedEntry(logEntries[0].id)
@@ -370,8 +374,9 @@ export default function App() {
   const handleLogSubmit = useCallback(async (text: string) => {
     if (!app.dbPath || !app.currentTag()) return
     const tag = app.currentTag()!
+    const project = app.currentProject()
     try {
-      await api.logAdd(app.dbPath, tag.key, text)
+      await api.logAdd(app.dbPath, tag.key, text, project?.key)
       await app.loadLog()
     } catch (e) {
       showToast(String(e), 'error')
@@ -427,6 +432,9 @@ export default function App() {
         tags={app.config?.tags ?? []}
         tagIdx={app.tagIdx}
         onTagChange={app.setTagIdx}
+        projects={app.config?.projects ?? []}
+        projectIdx={app.projectIdx}
+        onProjectChange={app.setProjectIdx}
         isActive={app.activePanel === 'log'}
         inputFocused={app.inputFocused}
         onEntrySelect={id => {
