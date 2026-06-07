@@ -188,6 +188,14 @@ export default function App() {
         app.cycleFilter(-1)
         break
 
+      case 'nextProjectFilter':
+        app.cycleProjectFilter(1)
+        break
+
+      case 'prevProjectFilter':
+        app.cycleProjectFilter(-1)
+        break
+
       case 'prevTag':
         app.cycleTag(-1)
         break
@@ -427,6 +435,8 @@ export default function App() {
         logEntries={app.logEntries}
         filterKeys={app.filterKeys}
         logFilter={app.logFilter}
+        projectFilterKeys={app.projectFilterKeys}
+        projectFilter={app.projectFilter}
         displayedEntryId={app.displayedEntryId}
         carryOver={app.carryOver}
         tags={app.config?.tags ?? []}
@@ -443,6 +453,7 @@ export default function App() {
         }}
         onLogSubmit={handleLogSubmit}
         onFilterChange={app.setFilter}
+        onProjectFilterChange={app.setProjectFilter}
         onInputFocus={app.setInputFocused}
         onOpenHelp={() => openDialog({ type: 'help' })}
         focusInputRef={focusInputRef}
