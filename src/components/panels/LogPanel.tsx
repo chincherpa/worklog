@@ -3,7 +3,7 @@ import { BG_PANEL, BORDER_NORMAL, BORDER_ACTIVE, TEXT_DIM, TEXT_SECONDARY, ACCEN
 import LogEntryRow from '../widgets/LogEntryRow'
 import DateSeparator from '../widgets/DateSeparator'
 import FilterBar from '../widgets/FilterBar'
-import type { LogEntry, Tag } from '../../types'
+import type { LogEntry, Project, Tag } from '../../types'
 
 interface Props {
   logEntries: LogEntry[]
@@ -14,6 +14,9 @@ interface Props {
   tags: Tag[]
   tagIdx: number
   onTagChange: (idx: number) => void
+  projects: Project[]
+  projectIdx: number
+  onProjectChange: (idx: number) => void
   isActive: boolean
   inputFocused: boolean
   onEntrySelect: (id: number) => void
@@ -22,13 +25,16 @@ interface Props {
   onInputFocus: (focused: boolean) => void
   onOpenHelp: () => void
   focusInputRef: React.MutableRefObject<(() => void) | null>
+  style?: React.CSSProperties
 }
 
 export default function LogPanel({
   logEntries, filterKeys, logFilter, displayedEntryId, carryOver,
-  tags, tagIdx, onTagChange, isActive, inputFocused,
+  tags, tagIdx, onTagChange,
+  projects, projectIdx, onProjectChange,
+  isActive, inputFocused,
   onEntrySelect, onLogSubmit, onFilterChange, onInputFocus, onOpenHelp,
-  focusInputRef,
+  focusInputRef, style,
 }: Props) {
   const inputRef = useRef<HTMLInputElement>(null)
   const tagMap = new Map(tags.map(t => [t.key, t]))
@@ -63,6 +69,18 @@ export default function LogPanel({
     return () => document.removeEventListener('mousedown', handler)
   }, [tagDropOpen])
 
+  const [projectDropOpen, setProjectDropOpen] = useState(false)
+  const projectDropRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!projectDropOpen) return
+    const handler = (e: MouseEvent) => {
+      if (!projectDropRef.current?.contains(e.target as Node)) setProjectDropOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [projectDropOpen])
+
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault()
     const input = inputRef.current
@@ -87,8 +105,9 @@ export default function LogPanel({
       border: `${isActive ? 2 : 1}px solid ${isActive ? BORDER_ACTIVE : BORDER_NORMAL}`,
       borderRadius: 4,
       overflow: 'hidden',
-      flex: '1.2',
+      flex: '1',
       minWidth: 0,
+      ...style,
     }}>
       {/* Title */}
       <div style={{
@@ -210,6 +229,63 @@ export default function LogPanel({
                     }}
                   >
                     {t.symbol} {t.key}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+        {projects.length > 1 && (
+          <div ref={projectDropRef} style={{ position: 'relative', flexShrink: 0 }}>
+            <button
+              type="button"
+              tabIndex={-1}
+              onClick={() => setProjectDropOpen(v => !v)}
+              style={{
+                color: projects[projectIdx]?.color ?? 'inherit',
+                background: projects[projectIdx]?.bg_color ?? ((projects[projectIdx]?.color ?? '#888') + '18'),
+                fontSize: 10,
+                padding: '2px 7px',
+                border: 'none',
+                borderRadius: 10,
+                cursor: 'pointer',
+                outline: 'none',
+              }}
+            >
+              {projects[projectIdx]?.symbol} {projects[projectIdx]?.key} ▾
+            </button>
+            {projectDropOpen && (
+              <div style={{
+                position: 'absolute',
+                bottom: '100%',
+                left: 0,
+                background: BG_PANEL,
+                border: `1px solid ${BORDER_NORMAL}`,
+                borderRadius: 4,
+                marginBottom: 4,
+                zIndex: 100,
+                minWidth: 130,
+                overflow: 'hidden',
+                padding: 4,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 3,
+              }}>
+                {projects.map((p, i) => (
+                  <div
+                    key={p.key}
+                    onMouseDown={() => { onProjectChange(i); setProjectDropOpen(false) }}
+                    style={{
+                      color: p.color,
+                      background: p.bg_color ?? (p.color + '18'),
+                      fontSize: 10,
+                      padding: '3px 8px',
+                      borderRadius: 10,
+                      cursor: 'pointer',
+                      outline: i === projectIdx ? `1px solid ${p.color}` : 'none',
+                    }}
+                  >
+                    {p.symbol} {p.key}
                   </div>
                 ))}
               </div>
