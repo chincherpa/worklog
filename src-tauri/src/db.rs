@@ -42,6 +42,7 @@ pub fn migrate(db_path: &str) -> Result<i64, String> {
         (5, MIGRATION_5),
         (6, MIGRATION_6),
         (7, MIGRATION_7),
+        (8, MIGRATION_8),
     ];
 
     for (version, sql) in migrations {
@@ -50,6 +51,8 @@ pub fn migrate(db_path: &str) -> Result<i64, String> {
         }
         if *version == 7 {
             add_column_if_missing(&conn, "todos", "tags", "TEXT").map_err(|e| e.to_string())?;
+        } else if *version == 8 {
+            add_column_if_missing(&conn, "log_entries", "project", "TEXT NOT NULL DEFAULT 'work'").map_err(|e| e.to_string())?;
         } else {
             exec_migration_sql(&conn, sql).map_err(|e| e.to_string())?;
         }
@@ -252,3 +255,6 @@ const MIGRATION_6: &str = r#"
 // Handled programmatically in migrate() via add_column_if_missing — not SQL.
 // Old binaries ran MIGRATION_3/4 without the tags column; this adds it retroactively.
 const MIGRATION_7: &str = "";
+
+// Handled programmatically — adds project column to log_entries if missing.
+const MIGRATION_8: &str = "";

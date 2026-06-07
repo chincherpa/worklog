@@ -6,6 +6,7 @@ pub struct LogEntry {
     pub date: String,
     pub created_at: String,
     pub tag_key: String,
+    pub project: String,
     pub content: String,
     pub todo_id: Option<i64>,
     pub resolved: i64,
