@@ -9,6 +9,9 @@ interface Props {
   logEntries: LogEntry[]
   filterKeys: string[]
   logFilter: string | null
+  projectFilterKeys: string[]
+  projectFilter: string | null
+  onProjectFilterChange: (key: string | null) => void
   displayedEntryId: number | null
   carryOver: LogEntry[]
   tags: Tag[]
@@ -29,7 +32,7 @@ interface Props {
 }
 
 export default function LogPanel({
-  logEntries, filterKeys, logFilter, displayedEntryId, carryOver,
+  logEntries, filterKeys, logFilter, projectFilterKeys, projectFilter, onProjectFilterChange, displayedEntryId, carryOver,
   tags, tagIdx, onTagChange,
   projects, projectIdx, onProjectChange,
   isActive, inputFocused,
@@ -38,13 +41,15 @@ export default function LogPanel({
 }: Props) {
   const inputRef = useRef<HTMLInputElement>(null)
   const tagMap = new Map(tags.map(t => [t.key, t]))
+  const projectMap = new Map(projects.map(p => [p.key, p]))
 
   const today = new Date().toISOString().slice(0, 10)
   const todayEntries = logEntries.filter(e => e.date === today)
 
-  const filtered = logFilter
-    ? logEntries.filter(e => e.tag_key === logFilter)
-    : logEntries
+  const filtered = logEntries.filter(e =>
+    (!logFilter || e.tag_key === logFilter) &&
+    (!projectFilter || e.project === projectFilter)
+  )
 
   // Group by date
   const grouped: { date: string; entries: LogEntry[] }[] = []
@@ -120,12 +125,20 @@ export default function LogPanel({
         📋 LOG · {titleDate} · {todayEntries.length} entries today
       </div>
 
-      {/* Filter bar */}
+      {/* Filter bars */}
+      {projectFilterKeys.length > 0 && (
+        <FilterBar
+          filterKeys={projectFilterKeys}
+          activeFilter={projectFilter}
+          items={projects}
+          onSelect={onProjectFilterChange}
+        />
+      )}
       {filterKeys.length > 0 && (
         <FilterBar
           filterKeys={filterKeys}
           activeFilter={logFilter}
-          tags={tags}
+          items={tags}
           onSelect={onFilterChange}
         />
       )}
@@ -156,6 +169,7 @@ export default function LogPanel({
                 key={e.id}
                 entry={e}
                 tag={tagMap.get(e.tag_key)}
+                project={projectMap.get(e.project)}
                 selected={e.id === displayedEntryId}
                 onClick={() => onEntrySelect(e.id)}
               />
