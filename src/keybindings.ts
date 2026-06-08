@@ -24,6 +24,7 @@ export type ActionName =
   | 'nextProjectFilter'
   | 'prevProjectFilter'
   | 'prevTag'
+  | 'nextTag'
   | 'cycleProject'
   | 'openHelp'
   | 'openConfig'
@@ -40,6 +41,7 @@ const BINDINGS: Record<string, ActionName> = {
   '?': 'openHelp',
   'Shift+D': 'deleteEntry',
   'Shift+I': 'prevProjectFilter',
+  'Shift+O': 'nextTag',
   'Shift+Tab': 'cyclePanelBack',
   a: 'addTodo',
   A: 'addTodo',

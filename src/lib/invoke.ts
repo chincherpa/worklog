@@ -4,6 +4,7 @@ import type {
   DayMeta,
   FocusSession,
   LogEntry,
+  Project,
   SubTodo,
   Tag,
   Todo,
@@ -21,6 +22,8 @@ export const api = {
     invoke<number>('init_db', { dbPath }),
   saveTags: (configPath: string, tags: Tag[]) =>
     invoke<void>('save_tags', { configPath, tags }),
+  saveProjects: (configPath: string, projects: Project[]) =>
+    invoke<void>('save_projects', { configPath, projects }),
 
   // Log
   logAdd: (dbPath: string, tagKey: string, content: string, projectKey?: string, todoId?: number) =>

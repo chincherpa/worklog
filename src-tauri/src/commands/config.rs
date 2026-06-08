@@ -11,8 +11,17 @@ pub struct TagInput {
     pub bg_color: Option<String>,
 }
 
+#[derive(Debug, Deserialize)]
+pub struct ProjectInput {
+    pub key: String,
+    pub symbol: String,
+    pub name: String,
+    pub color: String,
+    pub bg_color: Option<String>,
+}
+
 #[derive(Serialize)]
-struct TagOut {
+struct EntryOut {
     symbol: String,
     name: String,
     color: String,
@@ -23,7 +32,8 @@ struct TagOut {
 #[derive(Serialize)]
 struct ConfigOut {
     db_path: String,
-    tags: HashMap<String, TagOut>,
+    tags: HashMap<String, EntryOut>,
+    projects: HashMap<String, EntryOut>,
 }
 
 #[tauri::command]
@@ -42,13 +52,48 @@ pub fn init_db(db_path: String) -> Result<i64, String> {
     crate::db::migrate(&db_path)
 }
 
+fn tags_to_map(tags: &[crate::app_config::Tag]) -> HashMap<String, EntryOut> {
+    tags.iter().map(|t| (t.key.clone(), EntryOut {
+        symbol: t.symbol.clone(),
+        name: t.name.clone(),
+        color: t.color.clone(),
+        bg_color: t.bg_color.clone(),
+    })).collect()
+}
+
+fn projects_to_map(projects: &[crate::app_config::Project]) -> HashMap<String, EntryOut> {
+    projects.iter().map(|p| (p.key.clone(), EntryOut {
+        symbol: p.symbol.clone(),
+        name: p.name.clone(),
+        color: p.color.clone(),
+        bg_color: p.bg_color.clone(),
+    })).collect()
+}
+
+fn write_config(
+    config_path: &str,
+    db_path: String,
+    tags: HashMap<String, EntryOut>,
+    projects: HashMap<String, EntryOut>,
+) -> Result<(), String> {
+    let config_out = ConfigOut { db_path, tags, projects };
+
+    let toml_str = toml::to_string_pretty(&config_out)
+        .map_err(|e| format!("TOML serialization failed: {e}"))?;
+
+    std::fs::write(config_path, toml_str)
+        .map_err(|e| format!("Cannot write config: {e}"))?;
+
+    Ok(())
+}
+
 #[tauri::command]
 pub fn save_tags(config_path: String, tags: Vec<TagInput>) -> Result<(), String> {
     let current = load_config(Some(config_path.clone()))?;
 
-    let mut tags_map: HashMap<String, TagOut> = HashMap::new();
+    let mut tags_map: HashMap<String, EntryOut> = HashMap::new();
     for tag in tags {
-        tags_map.insert(tag.key, TagOut {
+        tags_map.insert(tag.key, EntryOut {
             symbol: tag.symbol,
             name: tag.name,
             color: tag.color,
@@ -56,16 +101,26 @@ pub fn save_tags(config_path: String, tags: Vec<TagInput>) -> Result<(), String>
         });
     }
 
-    let config_out = ConfigOut {
-        db_path: current.db_path,
-        tags: tags_map,
-    };
+    let projects_map = projects_to_map(&current.projects);
 
-    let toml_str = toml::to_string_pretty(&config_out)
-        .map_err(|e| format!("TOML serialization failed: {e}"))?;
+    write_config(&config_path, current.db_path, tags_map, projects_map)
+}
 
-    std::fs::write(&config_path, toml_str)
-        .map_err(|e| format!("Cannot write config: {e}"))?;
+#[tauri::command]
+pub fn save_projects(config_path: String, projects: Vec<ProjectInput>) -> Result<(), String> {
+    let current = load_config(Some(config_path.clone()))?;
 
-    Ok(())
+    let tags_map = tags_to_map(&current.tags);
+
+    let mut projects_map: HashMap<String, EntryOut> = HashMap::new();
+    for project in projects {
+        projects_map.insert(project.key, EntryOut {
+            symbol: project.symbol,
+            name: project.name,
+            color: project.color,
+            bg_color: project.bg_color,
+        });
+    }
+
+    write_config(&config_path, current.db_path, tags_map, projects_map)
 }

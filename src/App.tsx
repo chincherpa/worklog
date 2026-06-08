@@ -10,7 +10,7 @@ import ContentPanel from './components/panels/ContentPanel'
 import TodoPanel from './components/panels/TodoPanel'
 import ConfirmDialog from './components/dialogs/ConfirmDialog'
 import NewTodoDialog from './components/dialogs/NewTodoDialog'
-import ContentEditDialog from './components/dialogs/ContentEditDialog'
+import ContentEditDialog, { type EntryEditResult } from './components/dialogs/ContentEditDialog'
 import TagSelectDialog from './components/dialogs/TagSelectDialog'
 import FocusDialog from './components/dialogs/FocusDialog'
 import DebriefingDialog from './components/dialogs/DebriefingDialog'
@@ -22,7 +22,7 @@ import Toast, { useToast } from './components/widgets/Toast'
 import type { NewTodoResult } from './components/dialogs/NewTodoDialog'
 import type { FocusOutcome, FocusResult } from './components/dialogs/FocusDialog'
 import type { DebriefResult } from './components/dialogs/DebriefingDialog'
-import type { Tag } from './types'
+import type { Tag, Project } from './types'
 
 type DialogType =
   | 'none' | 'confirm' | 'newTodo' | 'contentEdit'
@@ -200,6 +200,10 @@ export default function App() {
         app.cycleTag(-1)
         break
 
+      case 'nextTag':
+        app.cycleTag(1)
+        break
+
       case 'cycleProject':
         app.cycleProject(1)
         break
@@ -324,10 +328,10 @@ export default function App() {
     showToast(`Todo created: ${result.title.slice(0, 30)}`, 'success')
   }, [app, closeDialog, showToast])
 
-  const handleContentEdit = useCallback(async (result: string | null) => {
+  const handleContentEdit = useCallback(async (result: EntryEditResult | null) => {
     closeDialog()
     if (!result || !app.dbPath || !app.displayedEntryId) return
-    await api.logUpdate(app.dbPath, app.displayedEntryId, result)
+    await api.logUpdate(app.dbPath, app.displayedEntryId, result.content, result.tagKey, undefined, result.projectKey)
     await app.loadLog()
   }, [app, closeDialog])
 
@@ -366,7 +370,7 @@ export default function App() {
     showToast('Session ended', 'info')
   }, [app, dialog, closeDialog, showToast])
 
-  const handleConfigSave = useCallback(async (tags: Tag[]) => {
+  const handleSaveTags = useCallback(async (tags: Tag[]) => {
     if (!app.config) return
     try {
       await api.saveTags(app.config.config_path, tags)
@@ -374,6 +378,19 @@ export default function App() {
       app.setConfig(newConfig)
       closeDialog()
       showToast('Tags saved', 'success')
+    } catch (e) {
+      showToast(String(e), 'error')
+    }
+  }, [app, closeDialog, showToast])
+
+  const handleSaveProjects = useCallback(async (projects: Project[]) => {
+    if (!app.config) return
+    try {
+      await api.saveProjects(app.config.config_path, projects)
+      const newConfig = await api.getConfig(app.config.config_path)
+      app.setConfig(newConfig)
+      closeDialog()
+      showToast('Projects saved', 'success')
     } catch (e) {
       showToast(String(e), 'error')
     }
@@ -394,6 +411,7 @@ export default function App() {
   const displayedEntry = app.logEntries.find(e => e.id === app.displayedEntryId)
   const selectedTodo = app.todos[app.todoIdx] ?? null
   const allTags = app.config?.tags ?? []
+  const allProjects = app.config?.projects ?? []
 
   if (app.error && !app.config) {
     return (
@@ -515,6 +533,10 @@ export default function App() {
       <ContentEditDialog
         open={dialog.type === 'contentEdit'}
         initialContent={displayedEntry?.content ?? ''}
+        tags={allTags}
+        currentTagKey={displayedEntry?.tag_key ?? ''}
+        projects={allProjects}
+        currentProjectKey={displayedEntry?.project ?? ''}
         onClose={handleContentEdit}
       />
 
@@ -563,7 +585,9 @@ export default function App() {
       <ConfigDialog
         open={dialog.type === 'config'}
         tags={allTags}
-        onSave={handleConfigSave}
+        projects={allProjects}
+        onSaveTags={handleSaveTags}
+        onSaveProjects={handleSaveProjects}
         onClose={closeDialog}
       />
 

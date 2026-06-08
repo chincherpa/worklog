@@ -38,6 +38,19 @@ export default function LogEntryRow({ entry, tag, project, selected, onClick }: 
       <span style={{ color: TEXT_DIM, fontSize: 11, minWidth: 38, flexShrink: 0 }}>
         {formatTime(entry.created_at)}
       </span>
+      {project && (
+        <span style={{
+          color: project.color,
+          background: project.bg_color ?? (project.color + '28'),
+          fontSize: 11,
+          padding: '1px 6px',
+          borderRadius: 10,
+          flexShrink: 0,
+          whiteSpace: 'nowrap',
+        }}>
+          {project.symbol} {project.key}
+        </span>
+      )}
       {tag && (
         <span style={{
           color: tag.color,
@@ -51,19 +64,6 @@ export default function LogEntryRow({ entry, tag, project, selected, onClick }: 
           textAlign: 'center',
         }}>
           {tag.symbol} {tag.key}
-        </span>
-      )}
-      {project && (
-        <span style={{
-          color: project.color,
-          background: project.bg_color ?? (project.color + '28'),
-          fontSize: 11,
-          padding: '1px 6px',
-          borderRadius: 10,
-          flexShrink: 0,
-          whiteSpace: 'nowrap',
-        }}>
-          {project.symbol} {project.key}
         </span>
       )}
       <span style={{

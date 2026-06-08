@@ -15,8 +15,11 @@ interface Props {
 export default function ContentPanel({ entries, displayedEntryId, config, isActive, style }: Props) {
   const tags = config?.tags ?? []
   const tagMap = new Map(tags.map(t => [t.key, t]))
+  const projects = config?.projects ?? []
+  const projectMap = new Map(projects.map(p => [p.key, p]))
   const entry = entries.find(e => e.id === displayedEntryId)
   const tag = entry ? tagMap.get(entry.tag_key) : undefined
+  const project = entry ? projectMap.get(entry.project) : undefined
 
   const lines = entry?.content.split('\n') ?? []
   const heading = lines[0] ?? ''
@@ -47,7 +50,14 @@ export default function ContentPanel({ entries, displayedEntryId, config, isActi
       }}>
         {entry && tag ? (
           <>
-            📄 <span style={{ color: tag.color }}>{tag.symbol} {tag.key}</span>
+            📄{' '}
+            {project && (
+              <>
+                <span style={{ color: project.color }}>{project.symbol} {project.key}</span>
+                {' · '}
+              </>
+            )}
+            <span style={{ color: tag.color }}>{tag.symbol} {tag.key}</span>
             {' · '}
             {entry.created_at.slice(0, 16)}
           </>

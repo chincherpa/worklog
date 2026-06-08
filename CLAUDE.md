@@ -37,7 +37,7 @@ block  = { symbol = "✕",  name = "Blockiert", color = "#FF6B6B" }
 note   = { symbol = "🗒️",  name = "Notiz",     color = "#D0D0D0" }
 ```
 
-Tags are a flat key→{symbol, name, color} map. No categories or active flags. Editable at runtime via `ConfigDialog` (g/G). `[schedule]` and `[projects]` sections are accepted in TOML but currently ignored by the backend.
+Tags and projects are each a flat key→{symbol, name, color, bg_color?} map, both editable at runtime via `ConfigDialog` (g/G — Tab switches between Tags/Projects sections). No categories or active flags. `[schedule]` is accepted in TOML but currently ignored by the backend.
 
 ## Architecture
 

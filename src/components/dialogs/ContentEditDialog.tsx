@@ -1,23 +1,38 @@
 import { useState, useEffect, useRef } from 'react'
-import { BG_PANEL, BORDER_NORMAL, BORDER_ACTIVE, TEXT_SECONDARY } from '../../theme'
+import { BG_PANEL, BORDER_NORMAL, BORDER_ACTIVE, TEXT_SECONDARY, TEXT_DIM } from '../../theme'
 import { Overlay } from './ConfirmDialog'
+import type { Tag, Project } from '../../types'
+
+export interface EntryEditResult {
+  content: string
+  tagKey: string
+  projectKey: string
+}
 
 interface Props {
   open: boolean
   initialContent: string
-  onClose: (result: string | null) => void
+  tags: Tag[]
+  currentTagKey: string
+  projects: Project[]
+  currentProjectKey: string
+  onClose: (result: EntryEditResult | null) => void
 }
 
-export default function ContentEditDialog({ open, initialContent, onClose }: Props) {
+export default function ContentEditDialog({ open, initialContent, tags, currentTagKey, projects, currentProjectKey, onClose }: Props) {
   const [text, setText] = useState(initialContent)
+  const [tagKey, setTagKey] = useState(currentTagKey)
+  const [projectKey, setProjectKey] = useState(currentProjectKey)
   const ref = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
     if (open) {
       setText(initialContent)
+      setTagKey(currentTagKey)
+      setProjectKey(currentProjectKey)
       setTimeout(() => ref.current?.focus(), 50)
     }
-  }, [open, initialContent])
+  }, [open, initialContent, currentTagKey, currentProjectKey])
 
   useEffect(() => {
     if (!open) return
@@ -64,9 +79,12 @@ export default function ContentEditDialog({ open, initialContent, onClose }: Pro
           }}
         />
 
+        <PillRow label="Tag" items={tags} currentKey={tagKey} onSelect={setTagKey} />
+        <PillRow label="Projekt" items={projects} currentKey={projectKey} onSelect={setProjectKey} />
+
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
           <button onClick={() => onClose(null)} style={btn(false)}>Cancel</button>
-          <button onClick={() => onClose(text)} style={btn(true)}>Save</button>
+          <button onClick={() => onClose({ content: text, tagKey, projectKey })} style={btn(true)}>Save</button>
         </div>
       </div>
     </Overlay>
@@ -84,4 +102,48 @@ function btn(primary: boolean): React.CSSProperties {
     fontSize: 12,
     fontFamily: 'inherit',
   }
+}
+
+interface Pillable {
+  key: string
+  symbol: string
+  color: string
+  bg_color?: string
+}
+
+function PillRow<T extends Pillable>({ label, items, currentKey, onSelect }: {
+  label: string
+  items: T[]
+  currentKey: string
+  onSelect: (key: string) => void
+}) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+      <div style={{ fontSize: 11, color: TEXT_DIM }}>{label}</div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+        {items.map(item => (
+          <button
+            key={item.key}
+            onClick={() => onSelect(item.key)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 4,
+              padding: '3px 10px',
+              borderRadius: 10,
+              border: `1px solid ${item.key === currentKey ? item.color : 'transparent'}`,
+              background: item.bg_color ?? (item.color + '28'),
+              color: item.color,
+              fontSize: 11,
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {item.symbol} {item.key}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
 }

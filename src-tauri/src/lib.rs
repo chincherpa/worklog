@@ -16,6 +16,7 @@ pub fn run() {
             get_db_path,
             init_db,
             save_tags,
+            save_projects,
             // log
             log_add,
             log_get,

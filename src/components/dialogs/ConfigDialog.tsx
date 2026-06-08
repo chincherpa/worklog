@@ -5,10 +5,14 @@ import {
   TEXT_PRIMARY, TEXT_SECONDARY, TEXT_DIM, ACCENT_RED,
 } from '../../theme'
 import { Overlay } from './ConfirmDialog'
-import type { Tag } from '../../types'
+import type { Tag, Project } from '../../types'
 
+type Mode = 'tags' | 'projects'
 
-interface TagDraft {
+// Tag and Project share the same shape — manage both through one entry type.
+type Entry = Tag
+
+interface EntryDraft {
   key: string
   symbol: string
   name: string
@@ -19,74 +23,107 @@ interface TagDraft {
 interface Props {
   open: boolean
   tags: Tag[]
-  onSave: (tags: Tag[]) => void
+  projects: Project[]
+  onSaveTags: (tags: Tag[]) => void
+  onSaveProjects: (projects: Project[]) => void
   onClose: () => void
 }
 
-export default function ConfigDialog({ open, tags: initialTags, onSave, onClose }: Props) {
-  const [tags, setTags] = useState<Tag[]>([])
+const TITLES: Record<Mode, string> = {
+  tags: '⚙ Manage Tags',
+  projects: '⚙ Manage Projects',
+}
+
+const EMPTY_HINTS: Record<Mode, string> = {
+  tags: 'No tags — press N to add one.',
+  projects: 'No projects — press N to add one.',
+}
+
+export default function ConfigDialog({ open, tags: initialTags, projects: initialProjects, onSaveTags, onSaveProjects, onClose }: Props) {
+  const [mode, setMode] = useState<Mode>('tags')
+  const [tagEntries, setTagEntries] = useState<Entry[]>([])
+  const [projectEntries, setProjectEntries] = useState<Entry[]>([])
   const [selectedIdx, setSelectedIdx] = useState(0)
   const [editingIdx, setEditingIdx] = useState<number | null>(null)
-  const [draft, setDraft] = useState<TagDraft | null>(null)
-  const [isNewTag, setIsNewTag] = useState(false)
+  const [draft, setDraft] = useState<EntryDraft | null>(null)
+  const [isNewEntry, setIsNewEntry] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
+
+  const entries = mode === 'tags' ? tagEntries : projectEntries
+  const setEntries = mode === 'tags' ? setTagEntries : setProjectEntries
 
   // Reset when dialog opens
   useEffect(() => {
     if (open) {
-      setTags([...initialTags])
+      setMode('tags')
+      setTagEntries([...initialTags])
+      setProjectEntries([...initialProjects])
       setSelectedIdx(0)
       setEditingIdx(null)
       setDraft(null)
-      setIsNewTag(false)
+      setIsNewEntry(false)
       setConfirmDelete(false)
     }
   }, [open]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const startEdit = useCallback((idx: number, currentTags: Tag[]) => {
-    setDraft({ ...currentTags[idx] })
+  const switchMode = useCallback((next: Mode) => {
+    setMode(next)
+    setSelectedIdx(0)
+    setEditingIdx(null)
+    setDraft(null)
+    setIsNewEntry(false)
+    setConfirmDelete(false)
+  }, [])
+
+  const startEdit = useCallback((idx: number, current: Entry[]) => {
+    setDraft({ ...current[idx] })
     setEditingIdx(idx)
-    setIsNewTag(false)
+    setIsNewEntry(false)
     setConfirmDelete(false)
   }, [])
 
   const startAdd = useCallback((currentLength: number) => {
-    const blank: TagDraft = { key: '', symbol: '', name: '', color: '#CED4DA', bg_color: '#888888' }
-    setTags(prev => [...prev, blank as Tag])
+    const blank: EntryDraft = { key: '', symbol: '', name: '', color: '#CED4DA', bg_color: '#888888' }
+    setEntries(prev => [...prev, blank as Entry])
     setSelectedIdx(currentLength)
     setDraft(blank)
     setEditingIdx(currentLength)
-    setIsNewTag(true)
+    setIsNewEntry(true)
     setConfirmDelete(false)
-  }, [])
+  }, [setEntries])
 
-  const commitDraft = useCallback((currentDraft: TagDraft, idx: number) => {
+  const commitDraft = useCallback((currentDraft: EntryDraft, idx: number) => {
     if (!currentDraft.key.trim() || !currentDraft.name.trim()) return
-    setTags(prev => {
+    setEntries(prev => {
       const next = [...prev]
-      next[idx] = currentDraft as Tag
+      next[idx] = currentDraft as Entry
       return next
     })
     setEditingIdx(null)
     setDraft(null)
-    setIsNewTag(false)
-  }, [])
+    setIsNewEntry(false)
+  }, [setEntries])
 
   const cancelDraft = useCallback((wasNew: boolean) => {
     if (wasNew) {
-      setTags(prev => prev.slice(0, -1))
+      setEntries(prev => prev.slice(0, -1))
       setSelectedIdx(prev => Math.max(0, prev - 1))
     }
     setEditingIdx(null)
     setDraft(null)
-    setIsNewTag(false)
-  }, [])
+    setIsNewEntry(false)
+  }, [setEntries])
 
   const deleteSelected = useCallback((idx: number) => {
-    setTags(prev => prev.filter((_, i) => i !== idx))
+    setEntries(prev => prev.filter((_, i) => i !== idx))
     setSelectedIdx(Math.max(0, idx - 1))
     setConfirmDelete(false)
-  }, [])
+  }, [setEntries])
+
+  const handleSave = useCallback(() => {
+    if (mode === 'tags') onSaveTags(tagEntries as Tag[])
+    else onSaveProjects(projectEntries as Project[])
+  }, [mode, tagEntries, projectEntries, onSaveTags, onSaveProjects])
 
   // List keyboard handler (active when not editing)
   useEffect(() => {
@@ -101,23 +138,26 @@ export default function ConfigDialog({ open, tags: initialTags, onSave, onClose 
         setConfirmDelete(false)
       } else if (e.key === 'ArrowDown' || e.key === 'j') {
         e.preventDefault()
-        setSelectedIdx(p => Math.min(tags.length - 1, p + 1))
+        setSelectedIdx(p => Math.min(entries.length - 1, p + 1))
         setConfirmDelete(false)
+      } else if (e.key === 'Tab') {
+        e.preventDefault()
+        if (!confirmDelete) switchMode(mode === 'tags' ? 'projects' : 'tags')
       } else if (e.key === 'Enter') {
         e.preventDefault()
-        if (tags.length > 0 && !confirmDelete) startEdit(selectedIdx, tags)
+        if (entries.length > 0 && !confirmDelete) startEdit(selectedIdx, entries)
       } else if (e.key === 'n' || e.key === 'N') {
         e.preventDefault()
-        if (!confirmDelete) startAdd(tags.length)
+        if (!confirmDelete) startAdd(entries.length)
       } else if ((e.key === 'd' || e.key === 'D') && !confirmDelete) {
         e.preventDefault()
-        if (tags.length > 0) setConfirmDelete(true)
+        if (entries.length > 0) setConfirmDelete(true)
       } else if ((e.key === 'd' || e.key === 'D') && confirmDelete) {
         e.preventDefault()
         deleteSelected(selectedIdx)
       } else if ((e.key === 's' || e.key === 'S') && !confirmDelete) {
         e.preventDefault()
-        onSave(tags)
+        handleSave()
       } else if (e.key === 'Escape') {
         e.preventDefault()
         if (confirmDelete) setConfirmDelete(false)
@@ -126,7 +166,7 @@ export default function ConfigDialog({ open, tags: initialTags, onSave, onClose 
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [open, editingIdx, tags, selectedIdx, confirmDelete, startEdit, startAdd, deleteSelected, onSave, onClose])
+  }, [open, editingIdx, entries, mode, selectedIdx, confirmDelete, startEdit, startAdd, deleteSelected, switchMode, handleSave, onClose])
 
   if (!open) return null
 
@@ -143,8 +183,28 @@ export default function ConfigDialog({ open, tags: initialTags, onSave, onClose 
         gap: 0,
         maxHeight: '80vh',
       }}>
-        <div style={{ fontSize: 13, color: TEXT_PRIMARY, fontWeight: 600, marginBottom: 12 }}>
-          ⚙ Manage Tags
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 12 }}>
+          <div style={{ fontSize: 13, color: TEXT_PRIMARY, fontWeight: 600 }}>
+            {TITLES[mode]}
+          </div>
+          <div style={{ display: 'flex', gap: 6, fontSize: 11 }}>
+            {(['tags', 'projects'] as Mode[]).map(m => (
+              <span
+                key={m}
+                onClick={() => switchMode(m)}
+                style={{
+                  padding: '2px 10px',
+                  borderRadius: 10,
+                  cursor: 'pointer',
+                  background: mode === m ? BG_SELECTED : 'transparent',
+                  color: mode === m ? TEXT_PRIMARY : TEXT_DIM,
+                  border: `1px solid ${mode === m ? BORDER_NORMAL : 'transparent'}`,
+                }}
+              >
+                {m === 'tags' ? 'Tags' : 'Projects'}
+              </span>
+            ))}
+          </div>
         </div>
 
         {/* Column headers */}
@@ -163,23 +223,23 @@ export default function ConfigDialog({ open, tags: initialTags, onSave, onClose 
           <span>Preview</span>
         </div>
 
-        {/* Tag rows */}
+        {/* Entry rows */}
         <div style={{ overflowY: 'auto', minHeight: 120, maxHeight: 360 }}>
-          {tags.length === 0 && (
+          {entries.length === 0 && (
             <div style={{ padding: '16px 8px', fontSize: 12, color: TEXT_DIM }}>
-              No tags — press N to add one.
+              {EMPTY_HINTS[mode]}
             </div>
           )}
-          {tags.map((tag, idx) => {
+          {entries.map((entry, idx) => {
             if (idx === editingIdx && draft) {
               return (
                 <EditRow
                   key={idx}
                   draft={draft}
-                  isNew={isNewTag}
+                  isNew={isNewEntry}
                   onChange={setDraft}
                   onCommit={() => commitDraft(draft, idx)}
-                  onCancel={() => cancelDraft(isNewTag)}
+                  onCancel={() => cancelDraft(isNewEntry)}
                 />
               )
             }
@@ -188,7 +248,7 @@ export default function ConfigDialog({ open, tags: initialTags, onSave, onClose 
               <div
                 key={idx}
                 onClick={() => { setSelectedIdx(idx); setConfirmDelete(false) }}
-                onDoubleClick={() => startEdit(idx, tags)}
+                onDoubleClick={() => startEdit(idx, entries)}
                 style={{
                   display: 'grid',
                   gridTemplateColumns: '80px 36px 1fr 140px',
@@ -200,18 +260,18 @@ export default function ConfigDialog({ open, tags: initialTags, onSave, onClose 
                   alignItems: 'center',
                 }}
               >
-                <span style={{ color: TEXT_SECONDARY }}>{tag.key}</span>
-                <span>{tag.symbol}</span>
-                <span style={{ color: TEXT_PRIMARY }}>{tag.name}</span>
+                <span style={{ color: TEXT_SECONDARY }}>{entry.key}</span>
+                <span>{entry.symbol}</span>
+                <span style={{ color: TEXT_PRIMARY }}>{entry.name}</span>
                 <span style={{
-                  color: tag.color,
-                  background: tag.bg_color ?? (tag.color + '28'),
+                  color: entry.color,
+                  background: entry.bg_color ?? (entry.color + '28'),
                   fontSize: 11,
                   padding: '2px 8px',
                   borderRadius: 10,
                   display: 'inline-block',
                 }}>
-                  {tag.symbol} {tag.key}
+                  {entry.symbol} {entry.key}
                 </span>
               </div>
             )
@@ -227,12 +287,12 @@ export default function ConfigDialog({ open, tags: initialTags, onSave, onClose 
           color: TEXT_DIM,
           minHeight: 24,
         }}>
-          {confirmDelete && tags[selectedIdx] ? (
+          {confirmDelete && entries[selectedIdx] ? (
             <span style={{ color: ACCENT_RED }}>
-              Delete tag "{tags[selectedIdx].name}"? D=Yes · Esc=Cancel
+              Delete "{entries[selectedIdx].name}"? D=Yes · Esc=Cancel
             </span>
           ) : (
-            <span>↑↓ Navigate · Enter Edit · N New · D Delete · S Save · Esc Close</span>
+            <span>↑↓ Navigate · Enter Edit · N New · D Delete · S Save · Tab Switch · Esc Close</span>
           )}
         </div>
       </div>
@@ -241,9 +301,9 @@ export default function ConfigDialog({ open, tags: initialTags, onSave, onClose 
 }
 
 interface EditRowProps {
-  draft: TagDraft
+  draft: EntryDraft
   isNew: boolean
-  onChange: (d: TagDraft) => void
+  onChange: (d: EntryDraft) => void
   onCommit: () => void
   onCancel: () => void
 }
