@@ -6,18 +6,22 @@ import {
 import TodoRow from '../widgets/TodoRow'
 import SessionBar from '../widgets/SessionBar'
 import { api } from '../../lib/invoke'
-import { formatTime } from '../../lib/format'
+import { formatTime, type PauseState } from '../../lib/format'
 import type { AppConfig, FocusSession, LogEntry, SubTodo, Todo, TodoNote } from '../../types'
 
 interface Props {
   todos: Todo[]
   todoIdx: number
   activeSession: FocusSession | null
+  sessionPause?: PauseState
+  onSessionPauseToggle?: () => void
+  onSessionStop?: () => void
   dbPath: string
   config: AppConfig | null
   isActive: boolean
   logEntries: LogEntry[]
   onTodoSelect: (idx: number) => void
+  subtodosRevision?: number
   style?: CSSProperties
 }
 
@@ -31,7 +35,8 @@ interface ExpandedData {
 const DONE_STATUSES = new Set(['done', 'cancelled', 'dropped'])
 
 export default function TodoPanel({
-  todos, todoIdx, activeSession, dbPath, isActive, logEntries, onTodoSelect, style,
+  todos, todoIdx, activeSession, sessionPause, onSessionPauseToggle, onSessionStop,
+  dbPath, isActive, logEntries, onTodoSelect, subtodosRevision, style,
 }: Props) {
   const [expanded, setExpanded] = useState<ExpandedData | null>(null)
   const selectedTodo = todos[todoIdx]
@@ -54,7 +59,7 @@ export default function TodoPanel({
       const linked = logEntries.filter(e => e.todo_id === selectedTodo.id).slice(0, 5)
       setExpanded({ todoId: selectedTodo.id, subTodos: subs, notes: notes.slice(-8), linkedLogs: linked })
     }).catch(console.error)
-  }, [selectedTodo?.id, dbPath, logEntries])
+  }, [selectedTodo?.id, dbPath, logEntries, subtodosRevision])
 
   const activeSessionTitle = activeSession
     ? todos.find(t => t.id === activeSession.todo_id)?.title?.slice(0, 30) ?? ''
@@ -85,7 +90,13 @@ export default function TodoPanel({
 
       {/* Active session bar */}
       {activeSession && (
-        <SessionBar session={activeSession} title={activeSessionTitle} />
+        <SessionBar
+          session={activeSession}
+          title={activeSessionTitle}
+          pause={sessionPause}
+          onPauseToggle={onSessionPauseToggle}
+          onStop={onSessionStop}
+        />
       )}
 
       {/* Todo list */}

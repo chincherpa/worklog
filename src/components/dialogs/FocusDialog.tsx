@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { BG_PANEL, BORDER_NORMAL, ACCENT_GREEN, ACCENT_GOLD, ACCENT_RED, TEXT_DIM, TEXT_PRIMARY, TEXT_SECONDARY } from '../../theme'
 import { Overlay } from './ConfirmDialog'
 import { api } from '../../lib/invoke'
-import { elapsedSeconds, formatTimer } from '../../lib/format'
+import { formatTimer, pausedElapsedSeconds, type PauseState } from '../../lib/format'
 import type { FocusSession, SubTodo, Todo, TodoNote } from '../../types'
 
 export type FocusOutcome = 'solved' | 'open' | 'blocked'
@@ -20,13 +20,12 @@ interface Props {
   session: FocusSession | null
   dbPath: string
   onClose: (result: FocusResult) => void
+  pause: PauseState
+  onPauseToggle: () => void
 }
 
-export default function FocusDialog({ open, todo, session, dbPath, onClose }: Props) {
-  const [paused, setPaused] = useState(false)
+export default function FocusDialog({ open, todo, session, dbPath, onClose, pause, onPauseToggle }: Props) {
   const [elapsed, setElapsed] = useState(0)
-  const [pauseStart, setPauseStart] = useState<number | null>(null)
-  const [pausedTotal, setPausedTotal] = useState(0)
   const [subTodos, setSubTodos] = useState<SubTodo[]>([])
   const [notes, setNotes] = useState<TodoNote[]>([])
   const [noteInput, setNoteInput] = useState('')
@@ -47,37 +46,22 @@ export default function FocusDialog({ open, todo, session, dbPath, onClose }: Pr
 
   useEffect(() => {
     if (!open || !session) return
+    setElapsed(pausedElapsedSeconds(session.started_at, pause))
     const id = setInterval(() => {
-      if (!paused) {
-        const base = elapsedSeconds(session.started_at)
-        setElapsed(Math.max(0, base - pausedTotal))
-      }
+      setElapsed(pausedElapsedSeconds(session.started_at, pause))
     }, 1000)
     return () => clearInterval(id)
-  }, [open, session, paused, pausedTotal])
+  }, [open, session, pause])
 
   useEffect(() => {
     if (!open) return
     const handler = (e: KeyboardEvent) => {
       if (e.key === 'Escape') handleMinimize()
-      if (e.key === 'p' || e.key === 'P') handlePauseToggle()
+      if (e.key === 'p' || e.key === 'P') onPauseToggle()
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [open, paused, pauseStart, pausedTotal, elapsed])
-
-  const handlePauseToggle = () => {
-    if (!paused) {
-      setPauseStart(Date.now())
-      setPaused(true)
-    } else {
-      if (pauseStart) {
-        setPausedTotal(prev => prev + Math.floor((Date.now() - pauseStart) / 1000))
-      }
-      setPauseStart(null)
-      setPaused(false)
-    }
-  }
+  }, [open, onPauseToggle, elapsed])
 
   const handleMinimize = () => {
     onClose({ action: 'minimize', elapsed_s: elapsed, notes: [] })
@@ -108,7 +92,7 @@ export default function FocusDialog({ open, todo, session, dbPath, onClose }: Pr
 
   if (!open || !todo || !session) return null
 
-  const timerColor = paused ? ACCENT_GOLD : ACCENT_GREEN
+  const timerColor = pause.paused ? ACCENT_GOLD : ACCENT_GREEN
 
   return (
     <Overlay>
@@ -137,7 +121,7 @@ export default function FocusDialog({ open, todo, session, dbPath, onClose }: Pr
 
         {/* Pause button */}
         <div style={{ textAlign: 'center' }}>
-          <button onClick={handlePauseToggle} style={{
+          <button onClick={onPauseToggle} style={{
             padding: '6px 20px',
             border: `1px solid ${timerColor}`,
             borderRadius: 4,
@@ -147,7 +131,7 @@ export default function FocusDialog({ open, todo, session, dbPath, onClose }: Pr
             fontSize: 12,
             fontFamily: 'inherit',
           }}>
-            {paused ? '▶ Resume' : '⏸ Pause'}
+            {pause.paused ? '▶ Resume' : '⏸ Pause'}
           </button>
         </div>
 

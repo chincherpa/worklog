@@ -9,9 +9,10 @@ interface Props {
   todo: Todo | null
   dbPath: string
   onClose: () => void
+  onSubtodosChange?: () => void
 }
 
-export default function TodoDetailDialog({ open, todo, dbPath, onClose }: Props) {
+export default function TodoDetailDialog({ open, todo, dbPath, onClose, onSubtodosChange }: Props) {
   const [subTodos, setSubTodos] = useState<SubTodo[]>([])
   const [notes, setNotes] = useState<TodoNote[]>([])
   const [subInput, setSubInput] = useState('')
@@ -42,6 +43,7 @@ export default function TodoDetailDialog({ open, todo, dbPath, onClose }: Props)
   const handleToggleSub = async (id: number) => {
     const updated = await api.subtodoToggle(dbPath, id)
     setSubTodos(prev => prev.map(s => s.id === id ? updated : s))
+    onSubtodosChange?.()
   }
 
   const handleAddSub = async (e: React.FormEvent) => {
@@ -50,6 +52,7 @@ export default function TodoDetailDialog({ open, todo, dbPath, onClose }: Props)
     const sub = await api.subtodoAdd(dbPath, todo.id, subInput.trim())
     setSubTodos(prev => [...prev, sub])
     setSubInput('')
+    onSubtodosChange?.()
   }
 
   const handleAddNote = async (e: React.FormEvent) => {

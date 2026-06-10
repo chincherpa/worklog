@@ -3,9 +3,12 @@ import { api } from './lib/invoke'
 import type { ActivePanel, AppConfig, FocusSession, LogEntry, Project, Tag, Todo } from './types'
 
 const DONE_STATUSES = new Set(['done', 'cancelled', 'dropped'])
+const PRIORITY_RANK: Record<string, number> = { high: 0, normal: 1, low: 2 }
 
 function sortTodosForDisplay(todos: Todo[]): Todo[] {
-  const active = todos.filter(t => !DONE_STATUSES.has(t.status))
+  const sortByPriority = (a: Todo, b: Todo) =>
+    (PRIORITY_RANK[a.priority] ?? 1) - (PRIORITY_RANK[b.priority] ?? 1)
+  const active = todos.filter(t => !DONE_STATUSES.has(t.status)).sort(sortByPriority)
   const done = todos.filter(t => DONE_STATUSES.has(t.status))
   return [...active, ...done]
 }
@@ -320,10 +323,10 @@ export function useAppState(): AppState & AppActions {
     })
   }, [])
 
-  // Load data when dbPath is set
+  // Load data when dbPath is set; close any sessions left open from a previous app run
   useEffect(() => {
     if (state.dbPath) {
-      loadAll()
+      api.sessionCloseDangling(state.dbPath).catch(console.error).finally(() => loadAll())
     }
   }, [state.dbPath, loadAll])
 

@@ -4,6 +4,7 @@ import { exit } from '@tauri-apps/plugin-process'
 import { useAppState } from './useAppState'
 import { getAction } from './keybindings'
 import { api } from './lib/invoke'
+import { PAUSE_NONE, pausedElapsedSeconds, type PauseState } from './lib/format'
 import { BG_BASE } from './theme'
 import LogPanel from './components/panels/LogPanel'
 import ContentPanel from './components/panels/ContentPanel'
@@ -64,6 +65,18 @@ export default function App() {
   const focusInputRef = useRef<(() => void) | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const [panelWidths, setPanelWidths] = useState({ log: 1.2, content: 1.0, todo: 0.9 })
+  const [focusPause, setFocusPause] = useState<PauseState>(PAUSE_NONE)
+  const [subtodosRevision, setSubtodosRevision] = useState(0)
+
+  const toggleFocusPause = useCallback(() => {
+    setFocusPause(p => p.paused
+      ? {
+          paused: false,
+          pauseStartMs: null,
+          pausedTotalMs: p.pausedTotalMs + (p.pauseStartMs !== null ? Date.now() - p.pauseStartMs : 0),
+        }
+      : { paused: true, pauseStartMs: Date.now(), pausedTotalMs: p.pausedTotalMs })
+  }, [])
 
   function startResize(e: React.MouseEvent, leftKey: 'log' | 'content', rightKey: 'content' | 'todo') {
     e.preventDefault()
@@ -240,8 +253,33 @@ export default function App() {
         await api.todoSetStatus(dbPath, todo.id, 'done')
         const tags = config?.tags ?? []
         const doneTag = tags.find(t => t.key === 'done')
-        if (doneTag) await api.logAdd(dbPath, 'done', todo.title)
+        let newEntryId: number | null = null
+        if (doneTag) {
+          const [subtodos, notes] = await Promise.all([
+            api.subtodoListForTodo(dbPath, todo.id),
+            api.noteListForTodo(dbPath, todo.id),
+          ])
+          let content = todo.title
+          if (subtodos.length > 0)
+            content += '\n' + subtodos.map(s => `${s.done ? '✓' : '○'} ${s.title}`).join('\n\n')
+          if (notes.length > 0) {
+            const separator = subtodos.length > 0 ? '\n\n---\n\n' : '\n\n'
+            content += separator + notes.map(n => n.content).join('\n\n')
+          }
+          let projectKey: string | undefined = todo.context ?? undefined
+          if (projectKey && config) {
+            const exists = config.projects.some(p => p.key === projectKey)
+            if (!exists) {
+              const newProject: Project = { key: projectKey, symbol: '📁', name: projectKey, color: '#D0D0D0' }
+              await api.saveProjects(config.config_path, [...config.projects, newProject])
+              app.setConfig(await api.getConfig(config.config_path))
+            }
+          }
+          const newEntry = await api.logAdd(dbPath, 'done', content, projectKey, todo.id)
+          newEntryId = newEntry.id
+        }
         await app.loadAll()
+        if (newEntryId !== null) app.setDisplayedEntry(newEntryId)
         showToast(`${todo.title.slice(0, 30)} done`, 'success')
         break
       }
@@ -298,6 +336,7 @@ export default function App() {
           openDialog({ type: 'focus' })
         } else if (!activeSession || activeSession.ended_at) {
           // Start new session
+          setFocusPause(PAUSE_NONE)
           await api.sessionStart(dbPath, todo.id)
           await app.loadAll()
           openDialog({ type: 'focus' })
@@ -343,6 +382,8 @@ export default function App() {
   }, [app, closeDialog])
 
   const handleFocusResult = useCallback(async (result: FocusResult) => {
+    // Pause state intentionally survives minimize; it is reset when the
+    // session actually ends (debrief) or a new one starts.
     if (result.action === 'minimize') {
       closeDialog()
       return
@@ -356,8 +397,19 @@ export default function App() {
     })
   }, [closeDialog, openDialog])
 
+  const handleSessionBarStop = useCallback(() => {
+    if (!app.activeSession) return
+    closeDialog()
+    openDialog({
+      type: 'debrief',
+      debriefOutcome: 'open',
+      debriefDurationS: pausedElapsedSeconds(app.activeSession.started_at, focusPause),
+    })
+  }, [app.activeSession, focusPause, closeDialog, openDialog])
+
   const handleDebriefResult = useCallback(async (result: DebriefResult | null) => {
     closeDialog()
+    setFocusPause(PAUSE_NONE)
     if (!app.dbPath || !app.activeSession) return
     const outcome = result?.outcome ?? dialog.debriefOutcome ?? 'open'
     await api.sessionEnd(app.dbPath, app.activeSession.id, outcome, result?.log_entry)
@@ -503,6 +555,9 @@ export default function App() {
           todos={app.todos}
           todoIdx={app.todoIdx}
           activeSession={app.activeSession}
+          sessionPause={focusPause}
+          onSessionPauseToggle={toggleFocusPause}
+          onSessionStop={handleSessionBarStop}
           dbPath={app.dbPath}
           config={app.config}
           isActive={app.activePanel === 'todo'}
@@ -511,6 +566,7 @@ export default function App() {
             app.setTodoIdx(idx)
             app.setActivePanel('todo')
           }}
+          subtodosRevision={subtodosRevision}
           style={{ flex: panelWidths.todo }}
         />
       )}
@@ -553,6 +609,8 @@ export default function App() {
         session={app.activeSession}
         dbPath={app.dbPath}
         onClose={handleFocusResult}
+        pause={focusPause}
+        onPauseToggle={toggleFocusPause}
       />
 
       <DebriefingDialog
@@ -568,6 +626,7 @@ export default function App() {
         todo={selectedTodo}
         dbPath={app.dbPath}
         onClose={closeDialog}
+        onSubtodosChange={() => setSubtodosRevision(r => r + 1)}
       />
 
       <WeeklyReviewDialog

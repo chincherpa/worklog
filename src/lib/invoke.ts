@@ -68,6 +68,8 @@ export const api = {
     invoke<FocusSession>('session_get', { dbPath, sessionId }),
   sessionGetActive: (dbPath: string) =>
     invoke<FocusSession | null>('session_get_active', { dbPath }),
+  sessionCloseDangling: (dbPath: string) =>
+    invoke<number>('session_close_dangling', { dbPath }),
   sessionListForTodo: (dbPath: string, todoId: number) =>
     invoke<FocusSession[]>('session_list_for_todo', { dbPath, todoId }),
   sessionTotalToday: (dbPath: string) =>

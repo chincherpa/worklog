@@ -110,6 +110,26 @@ pub fn session_get_active(db_path: String) -> Result<Option<FocusSession>, Strin
 }
 
 #[tauri::command]
+pub fn session_close_dangling(db_path: String) -> Result<u32, String> {
+    let conn = get_connection(&db_path).map_err(|e| e.to_string())?;
+    // Pause active todos whose session is still open (before we close the sessions)
+    conn.execute(
+        "UPDATE todos SET status = 'paused'
+         WHERE status = 'active'
+         AND id IN (SELECT todo_id FROM focus_sessions WHERE ended_at IS NULL)",
+        [],
+    ).map_err(|e| e.to_string())?;
+    let ended_at = now_str();
+    let count = conn.execute(
+        "UPDATE focus_sessions SET ended_at = ?1, outcome = 'open',
+         duration_s = CAST((strftime('%s', ?1) - strftime('%s', started_at)) AS INTEGER)
+         WHERE ended_at IS NULL",
+        params![ended_at],
+    ).map_err(|e| e.to_string())? as u32;
+    Ok(count)
+}
+
+#[tauri::command]
 pub fn session_list_for_todo(db_path: String, todo_id: i64) -> Result<Vec<FocusSession>, String> {
     let conn = get_connection(&db_path).map_err(|e| e.to_string())?;
     let mut stmt = conn

@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "worklog — daily journal",
+        "title": "worklog",
         "width": 1400,
         "height": 900,
         "minWidth": 900,

@@ -39,6 +39,7 @@ pub fn run() {
             session_end,
             session_get,
             session_get_active,
+            session_close_dangling,
             session_list_for_todo,
             session_total_today,
             // notes + subtodos

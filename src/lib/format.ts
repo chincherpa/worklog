@@ -21,6 +21,20 @@ export function elapsedSeconds(startedAt: string): number {
   return Math.floor((Date.now() - start) / 1000)
 }
 
+export interface PauseState {
+  paused: boolean
+  pauseStartMs: number | null
+  pausedTotalMs: number
+}
+
+export const PAUSE_NONE: PauseState = { paused: false, pauseStartMs: null, pausedTotalMs: 0 }
+
+export function pausedElapsedSeconds(startedAt: string, pause: PauseState): number {
+  const start = new Date(startedAt.replace(' ', 'T')).getTime()
+  const currentPauseMs = pause.paused && pause.pauseStartMs !== null ? Date.now() - pause.pauseStartMs : 0
+  return Math.max(0, Math.floor((Date.now() - start - pause.pausedTotalMs - currentPauseMs) / 1000))
+}
+
 export function formatDate(dateStr: string): string {
   const today = new Date().toISOString().slice(0, 10)
   if (dateStr === today) return 'Heute'

@@ -45,8 +45,12 @@ export default function LogEntryRow({ entry, tag, project, selected, onClick }: 
           fontSize: 11,
           padding: '1px 6px',
           borderRadius: 10,
+          width: 80,
           flexShrink: 0,
           whiteSpace: 'nowrap',
+          textAlign: 'center',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
         }}>
           {project.symbol} {project.key}
         </span>
@@ -58,10 +62,12 @@ export default function LogEntryRow({ entry, tag, project, selected, onClick }: 
           fontSize: 11,
           padding: '1px 6px',
           borderRadius: 10,
-          minWidth: 60,
+          width: 80,
           flexShrink: 0,
           whiteSpace: 'nowrap',
           textAlign: 'center',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
         }}>
           {tag.symbol} {tag.key}
         </span>
