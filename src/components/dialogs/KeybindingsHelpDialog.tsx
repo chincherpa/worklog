@@ -1,47 +1,42 @@
 import { useEffect } from 'react'
 import { BG_PANEL, BORDER_NORMAL, TEXT_DIM, TEXT_PRIMARY, TEXT_SECONDARY } from '../../theme'
 import { Overlay } from './ConfirmDialog'
+import { ALL_ACTIONS, ACTION_LABELS, bindingsToPerAction, getActiveBindings } from '../../keybindings'
 
 interface Props {
   open: boolean
   onClose: () => void
 }
 
-const BINDINGS = [
-  ['↑', 'Navigate up'],
-  ['↓', 'Navigate down'],
-  ['Shift+↑', 'Move todo up'],
-  ['Shift+↓', 'Move todo down'],
-  ['A', 'New todo'],
-  ['B', 'Previous filter'],
-  ['C', 'Change entry tag'],
-  ['D', 'Mark todo done'],
-  ['E', 'Edit entry'],
-  ['F', 'Start / Stop focus session'],
-  ['G', 'Manage tags (config)'],
-  ['I', 'Next project filter'],
-  ['L', 'Focus log input'],
-  ['N', 'Next filter'],
-  ['O', 'Cycle active project'],
-  ['P', 'Previous tag (input)'],
-  ['R', 'Reload all'],
-  ['M', 'Toggle content panel'],
-  ['T', 'Toggle todo panel'],
-  ['V', 'Jump to latest entry'],
-  ['W', 'Weekly review'],
-  ['X', 'Cancel todo (confirm)'],
-  ['Q', 'Quit'],
-  ['Enter', 'Open todo detail'],
-  ['Tab', 'Next panel'],
-  ['Shift+D', 'Delete log entry'],
-  ['Shift+I', 'Previous project filter'],
-  ['Shift+O', 'Cycle tag'],
-  ['Shift+Tab', 'Previous panel'],
-  ['Space', 'Todo active/paused'],
-  ['?', 'This help'],
-]
+/** Make a raw key string presentable (e.g. "Shift+ArrowUp" → "Shift+↑", " " → "Space"). */
+function prettyKey(key: string): string {
+  return key
+    .split('+')
+    .map(part => {
+      switch (part) {
+        case 'ArrowUp': return '↑'
+        case 'ArrowDown': return '↓'
+        case 'ArrowLeft': return '←'
+        case 'ArrowRight': return '→'
+        case ' ': return 'Space'
+        case 'Control': return 'Ctrl'
+        default: return part
+      }
+    })
+    .join('+')
+}
 
 export default function KeybindingsHelpDialog({ open, onClose }: Props) {
+  // Build rows live from the active bindings so user edits are reflected immediately.
+  const perAction = bindingsToPerAction(getActiveBindings())
+  const BINDINGS: [string, string][] = ALL_ACTIONS
+    .map(action => {
+      const keys = perAction[action] ?? []
+      if (keys.length === 0) return null
+      return [keys.map(prettyKey).join(' / '), ACTION_LABELS[action]] as [string, string]
+    })
+    .filter((r): r is [string, string] => r !== null)
+
   useEffect(() => {
     if (!open) return
     const handler = (e: KeyboardEvent) => {

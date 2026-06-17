@@ -96,7 +96,7 @@ export default function TodoPanel({
         color: TEXT_SECONDARY,
         flexShrink: 0,
       }}>
-        ✅ TODOS · {openCount} offen · {doneCount} done
+        ✅ TODOS · {openCount} open · {doneCount} done
       </div>
 
       {/* Active session bar */}
@@ -236,7 +236,7 @@ function ExpandedSection({ expanded }: { expanded: ExpandedData }) {
               {hoveredNote === n.id && (
                 <button
                   onClick={(e) => handleCopyNote(e, n.id, n.content)}
-                  title="Kopieren"
+                  title="Copy"
                   style={{
                     flexShrink: 0,
                     background: 'none',

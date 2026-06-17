@@ -35,8 +35,8 @@ export default function ConfirmDialog({ open, message, onClose }: Props) {
       }}>
         <div style={{ color: TEXT_PRIMARY, fontSize: 13 }}>{message}</div>
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-          <button onClick={() => onClose(false)} style={btnStyle(false)}>Nein</button>
-          <button onClick={() => onClose(true)} style={btnStyle(true)}>Ja</button>
+          <button onClick={() => onClose(false)} style={btnStyle(false)}>No</button>
+          <button onClick={() => onClose(true)} style={btnStyle(true)}>Yes</button>
         </div>
       </div>
     </Overlay>

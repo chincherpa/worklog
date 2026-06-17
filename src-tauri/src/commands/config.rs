@@ -3,6 +3,12 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 #[derive(Debug, Deserialize)]
+pub struct KeybindingInput {
+    pub action: String,
+    pub keys: Vec<String>,
+}
+
+#[derive(Debug, Deserialize)]
 pub struct TagInput {
     pub key: String,
     pub symbol: String,
@@ -34,6 +40,8 @@ struct ConfigOut {
     db_path: String,
     tags: HashMap<String, EntryOut>,
     projects: HashMap<String, EntryOut>,
+    #[serde(skip_serializing_if = "HashMap::is_empty")]
+    keybindings: HashMap<String, Vec<String>>,
 }
 
 #[tauri::command]
@@ -70,13 +78,21 @@ fn projects_to_map(projects: &[crate::app_config::Project]) -> HashMap<String, E
     })).collect()
 }
 
+fn keybindings_to_map(keybindings: &[crate::app_config::Keybinding]) -> HashMap<String, Vec<String>> {
+    keybindings.iter()
+        .filter(|kb| !kb.keys.is_empty())
+        .map(|kb| (kb.action.clone(), kb.keys.clone()))
+        .collect()
+}
+
 fn write_config(
     config_path: &str,
     db_path: String,
     tags: HashMap<String, EntryOut>,
     projects: HashMap<String, EntryOut>,
+    keybindings: HashMap<String, Vec<String>>,
 ) -> Result<(), String> {
-    let config_out = ConfigOut { db_path, tags, projects };
+    let config_out = ConfigOut { db_path, tags, projects, keybindings };
 
     let toml_str = toml::to_string_pretty(&config_out)
         .map_err(|e| format!("TOML serialization failed: {e}"))?;
@@ -102,8 +118,9 @@ pub fn save_tags(config_path: String, tags: Vec<TagInput>) -> Result<(), String>
     }
 
     let projects_map = projects_to_map(&current.projects);
+    let keybindings_map = keybindings_to_map(&current.keybindings);
 
-    write_config(&config_path, current.db_path, tags_map, projects_map)
+    write_config(&config_path, current.db_path, tags_map, projects_map, keybindings_map)
 }
 
 #[tauri::command]
@@ -142,5 +159,24 @@ pub fn save_projects(config_path: String, projects: Vec<ProjectInput>) -> Result
         });
     }
 
-    write_config(&config_path, current.db_path, tags_map, projects_map)
+    let keybindings_map = keybindings_to_map(&current.keybindings);
+
+    write_config(&config_path, current.db_path, tags_map, projects_map, keybindings_map)
+}
+
+#[tauri::command]
+pub fn save_keybindings(config_path: String, keybindings: Vec<KeybindingInput>) -> Result<(), String> {
+    let current = load_config(Some(config_path.clone()))?;
+
+    let tags_map = tags_to_map(&current.tags);
+    let projects_map = projects_to_map(&current.projects);
+
+    let mut keybindings_map: HashMap<String, Vec<String>> = HashMap::new();
+    for kb in keybindings {
+        if !kb.keys.is_empty() {
+            keybindings_map.insert(kb.action, kb.keys);
+        }
+    }
+
+    write_config(&config_path, current.db_path, tags_map, projects_map, keybindings_map)
 }

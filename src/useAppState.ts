@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { api } from './lib/invoke'
+import { setBindings, buildBindings, keybindingListToPerAction } from './keybindings'
 import type { ActivePanel, AppConfig, FocusSession, LogEntry, Project, Tag, Todo } from './types'
 
 const DONE_STATUSES = new Set(['done', 'cancelled', 'dropped'])
@@ -328,6 +329,7 @@ export function useAppState(): AppState & AppActions {
   useEffect(() => {
     api.getConfig().then(async config => {
       await api.initDb(config.db_path)
+      setBindings(buildBindings(keybindingListToPerAction(config.keybindings)))
       setState(prev => ({ ...prev, config, dbPath: config.db_path }))
     }).catch(e => {
       setState(prev => ({ ...prev, error: String(e) }))

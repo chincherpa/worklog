@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { listen } from '@tauri-apps/api/event'
 import { exit } from '@tauri-apps/plugin-process'
 import { useAppState } from './useAppState'
-import { getAction } from './keybindings'
+import { getAction, setBindings, buildBindings, keybindingListToPerAction } from './keybindings'
 import { api } from './lib/invoke'
 import { PAUSE_NONE, pausedElapsedSeconds, type PauseState } from './lib/format'
 import { BG_BASE } from './theme'
@@ -24,7 +24,7 @@ import Toast, { useToast } from './components/widgets/Toast'
 import type { NewTodoResult } from './components/dialogs/NewTodoDialog'
 import type { FocusOutcome, FocusResult } from './components/dialogs/FocusDialog'
 import type { DebriefResult } from './components/dialogs/DebriefingDialog'
-import type { Tag, Project, SearchHit } from './types'
+import type { Tag, Project, SearchHit, Keybinding } from './types'
 
 type DialogType =
   | 'none' | 'confirm' | 'newTodo' | 'contentEdit'
@@ -273,7 +273,7 @@ export default function App() {
         const todo = todos[todoIdx]
         if (!todo || !dbPath) break
         if (todo.status === 'done') {
-          showToast(`${todo.title.slice(0, 30)} bereits erledigt`, 'info')
+          showToast(`${todo.title.slice(0, 30)} already done`, 'info')
           break
         }
         await api.todoSetStatus(dbPath, todo.id, 'done')
@@ -404,7 +404,7 @@ export default function App() {
     app.setTodoVisible(true)
     const idx = app.todos.findIndex(t => t.id === todoId)
     if (idx < 0) {
-      showToast('Eintrag nicht in aktueller Liste', 'warning')
+      showToast('Entry not in current list', 'warning')
       return
     }
     app.setTodoIdx(idx)
@@ -499,6 +499,20 @@ export default function App() {
       app.setConfig(newConfig)
       closeDialog()
       showToast('Projects saved', 'success')
+    } catch (e) {
+      showToast(String(e), 'error')
+    }
+  }, [app, closeDialog, showToast])
+
+  const handleSaveKeybindings = useCallback(async (keybindings: Keybinding[]) => {
+    if (!app.config) return
+    try {
+      await api.saveKeybindings(app.config.config_path, keybindings)
+      const newConfig = await api.getConfig(app.config.config_path)
+      app.setConfig(newConfig)
+      setBindings(buildBindings(keybindingListToPerAction(newConfig.keybindings)))
+      closeDialog()
+      showToast('Keybindings saved', 'success')
     } catch (e) {
       showToast(String(e), 'error')
     }
@@ -715,8 +729,10 @@ export default function App() {
         open={dialog.type === 'config'}
         tags={allTags}
         projects={allProjects}
+        keybindings={app.config?.keybindings ?? []}
         onSaveTags={handleSaveTags}
         onSaveProjects={handleSaveProjects}
+        onSaveKeybindings={handleSaveKeybindings}
         onClose={closeDialog}
       />
 

@@ -77,9 +77,15 @@ export interface Project {
   bg_color?: string
 }
 
+export interface Keybinding {
+  action: string
+  keys: string[]
+}
+
 export interface AppConfig {
   tags: Tag[]
   projects: Project[]
+  keybindings: Keybinding[]
   config_path: string
   db_path: string
 }

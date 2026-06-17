@@ -37,9 +37,9 @@ export function pausedElapsedSeconds(startedAt: string, pause: PauseState): numb
 
 export function formatDate(dateStr: string): string {
   const today = new Date().toISOString().slice(0, 10)
-  if (dateStr === today) return 'Heute'
+  if (dateStr === today) return 'Today'
   const d = new Date(dateStr)
-  return d.toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })
+  return d.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })
 }
 
 export function formatTime(createdAt: string): string {

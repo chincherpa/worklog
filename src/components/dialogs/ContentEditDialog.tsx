@@ -80,7 +80,7 @@ export default function ContentEditDialog({ open, initialContent, tags, currentT
         />
 
         <PillRow label="Tag" items={tags} currentKey={tagKey} onSelect={setTagKey} />
-        <PillRow label="Projekt" items={projects} currentKey={projectKey} onSelect={setProjectKey} />
+        <PillRow label="Project" items={projects} currentKey={projectKey} onSelect={setProjectKey} />
 
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
           <button onClick={() => onClose(null)} style={btn(false)}>Cancel</button>

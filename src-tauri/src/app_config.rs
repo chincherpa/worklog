@@ -23,9 +23,16 @@ pub struct Project {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Keybinding {
+    pub action: String,
+    pub keys: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AppConfig {
     pub tags: Vec<Tag>,
     pub projects: Vec<Project>,
+    pub keybindings: Vec<Keybinding>,
     pub config_path: String,
     pub db_path: String,
 }
@@ -41,6 +48,7 @@ pub fn load_config(config_path: Option<String>) -> Result<AppConfig, String> {
 
     let tags = parse_tags(doc.get("tags"));
     let projects = parse_projects(doc.get("projects"));
+    let keybindings = parse_keybindings(doc.get("keybindings"));
 
     let db_path = if let Some(explicit) = doc.get("db_path").and_then(|v| v.as_str()) {
         let p = PathBuf::from(explicit);
@@ -61,9 +69,36 @@ pub fn load_config(config_path: Option<String>) -> Result<AppConfig, String> {
     Ok(AppConfig {
         tags,
         projects,
+        keybindings,
         config_path: path.to_string_lossy().to_string(),
         db_path,
     })
+}
+
+/// Parse the `[keybindings]` table. Each value may be a single string or an array
+/// of strings. Missing section → empty (frontend falls back to its defaults).
+fn parse_keybindings(val: Option<&Value>) -> Vec<Keybinding> {
+    let Some(Value::Table(table)) = val else { return vec![] };
+    table
+        .iter()
+        .filter_map(|(action, v)| {
+            let keys = match v {
+                Value::String(s) => vec![s.clone()],
+                Value::Array(arr) => arr
+                    .iter()
+                    .filter_map(|k| k.as_str().map(|s| s.to_string()))
+                    .collect(),
+                _ => return None,
+            };
+            if keys.is_empty() {
+                return None;
+            }
+            Some(Keybinding {
+                action: action.clone(),
+                keys,
+            })
+        })
+        .collect()
 }
 
 fn parse_tags(tags_val: Option<&Value>) -> Vec<Tag> {

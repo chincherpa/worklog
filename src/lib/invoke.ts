@@ -4,6 +4,7 @@ import type {
   DayMeta,
   FocusSession,
   LogEntry,
+  Keybinding,
   Project,
   SearchHit,
   SubTodo,
@@ -25,6 +26,8 @@ export const api = {
     invoke<void>('save_tags', { configPath, tags }),
   saveProjects: (configPath: string, projects: Project[]) =>
     invoke<void>('save_projects', { configPath, projects }),
+  saveKeybindings: (configPath: string, keybindings: Keybinding[]) =>
+    invoke<void>('save_keybindings', { configPath, keybindings }),
 
   // Log
   logAdd: (dbPath: string, tagKey: string, content: string, projectKey?: string, todoId?: number) =>

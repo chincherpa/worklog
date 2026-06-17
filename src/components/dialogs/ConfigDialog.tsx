@@ -5,9 +5,14 @@ import {
   TEXT_PRIMARY, TEXT_SECONDARY, TEXT_DIM, ACCENT_RED,
 } from '../../theme'
 import { Overlay } from './ConfirmDialog'
-import type { Tag, Project } from '../../types'
+import type { Tag, Project, Keybinding } from '../../types'
+import {
+  ALL_ACTIONS, ACTION_LABELS, DEFAULT_PER_ACTION,
+  keyStr, withCaseVariant, keybindingListToPerAction,
+  type ActionName,
+} from '../../keybindings'
 
-type Mode = 'tags' | 'projects'
+type Mode = 'tags' | 'projects' | 'keybindings'
 
 // Tag and Project share the same shape — manage both through one entry type.
 type Entry = Tag
@@ -24,22 +29,38 @@ interface Props {
   open: boolean
   tags: Tag[]
   projects: Project[]
+  keybindings: Keybinding[]
   onSaveTags: (tags: Tag[]) => void
   onSaveProjects: (projects: Project[]) => void
+  onSaveKeybindings: (keybindings: Keybinding[]) => void
   onClose: () => void
 }
 
 const TITLES: Record<Mode, string> = {
   tags: '⚙ Manage Tags',
   projects: '⚙ Manage Projects',
+  keybindings: '⌨ Manage Keybindings',
 }
 
 const EMPTY_HINTS: Record<Mode, string> = {
   tags: 'No tags — press N to add one.',
   projects: 'No projects — press N to add one.',
+  keybindings: '',
 }
 
-export default function ConfigDialog({ open, tags: initialTags, projects: initialProjects, onSaveTags, onSaveProjects, onClose }: Props) {
+const MODE_ORDER: Mode[] = ['tags', 'projects', 'keybindings']
+
+/** Build the editor's per-action map: config overrides, falling back to defaults. */
+function initialPerAction(keybindings: Keybinding[]): Record<string, string[]> {
+  const override = keybindingListToPerAction(keybindings)
+  const out: Record<string, string[]> = {}
+  for (const a of ALL_ACTIONS) {
+    out[a] = override[a]?.length ? [...override[a]] : [...(DEFAULT_PER_ACTION[a] ?? [])]
+  }
+  return out
+}
+
+export default function ConfigDialog({ open, tags: initialTags, projects: initialProjects, keybindings: initialKeybindings, onSaveTags, onSaveProjects, onSaveKeybindings, onClose }: Props) {
   const [mode, setMode] = useState<Mode>('tags')
   const [tagEntries, setTagEntries] = useState<Entry[]>([])
   const [projectEntries, setProjectEntries] = useState<Entry[]>([])
@@ -48,6 +69,10 @@ export default function ConfigDialog({ open, tags: initialTags, projects: initia
   const [draft, setDraft] = useState<EntryDraft | null>(null)
   const [isNewEntry, setIsNewEntry] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
+  // Keybindings mode
+  const [kbPerAction, setKbPerAction] = useState<Record<string, string[]>>({})
+  const [capturing, setCapturing] = useState(false)
+  const [kbConflict, setKbConflict] = useState<string | null>(null)
 
   const entries = mode === 'tags' ? tagEntries : projectEntries
   const setEntries = mode === 'tags' ? setTagEntries : setProjectEntries
@@ -58,11 +83,14 @@ export default function ConfigDialog({ open, tags: initialTags, projects: initia
       setMode('tags')
       setTagEntries([...initialTags])
       setProjectEntries([...initialProjects])
+      setKbPerAction(initialPerAction(initialKeybindings))
       setSelectedIdx(0)
       setEditingIdx(null)
       setDraft(null)
       setIsNewEntry(false)
       setConfirmDelete(false)
+      setCapturing(false)
+      setKbConflict(null)
     }
   }, [open]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -73,6 +101,8 @@ export default function ConfigDialog({ open, tags: initialTags, projects: initia
     setDraft(null)
     setIsNewEntry(false)
     setConfirmDelete(false)
+    setCapturing(false)
+    setKbConflict(null)
   }, [])
 
   const startEdit = useCallback((idx: number, current: Entry[]) => {
@@ -138,12 +168,95 @@ export default function ConfigDialog({ open, tags: initialTags, projects: initia
 
   const handleSave = useCallback(() => {
     if (mode === 'tags') onSaveTags(tagEntries as Tag[])
-    else onSaveProjects(projectEntries as Project[])
-  }, [mode, tagEntries, projectEntries, onSaveTags, onSaveProjects])
+    else if (mode === 'projects') onSaveProjects(projectEntries as Project[])
+    else {
+      const list: Keybinding[] = ALL_ACTIONS.map(a => ({ action: a, keys: kbPerAction[a] ?? [] }))
+      onSaveKeybindings(list)
+    }
+  }, [mode, tagEntries, projectEntries, kbPerAction, onSaveTags, onSaveProjects, onSaveKeybindings])
 
-  // List keyboard handler (active when not editing)
+  const resetActionToDefault = useCallback((action: ActionName) => {
+    setKbPerAction(prev => ({ ...prev, [action]: [...(DEFAULT_PER_ACTION[action] ?? [])] }))
+    setKbConflict(null)
+  }, [])
+
+  const resetAllToDefault = useCallback(() => {
+    setKbPerAction(initialPerAction([]))
+    setKbConflict(null)
+  }, [])
+
+  // Capture a pressed combo for the currently selected action (active while `capturing`).
   useEffect(() => {
-    if (!open || editingIdx !== null) return
+    if (!open || !capturing || mode !== 'keybindings') return
+    const action = ALL_ACTIONS[selectedIdx]
+    const handler = (e: KeyboardEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+      if (e.key === 'Escape') { setCapturing(false); setKbConflict(null); return }
+      // Ignore lone modifier presses — wait for the real key.
+      if (['Shift', 'Control', 'Alt', 'Meta'].includes(e.key)) return
+      const newKeys = withCaseVariant(keyStr(e))
+      // Conflict: any captured key already bound to a different action.
+      for (const other of ALL_ACTIONS) {
+        if (other === action) continue
+        if (kbPerAction[other]?.some(k => newKeys.includes(k))) {
+          setKbConflict(`"${keyStr(e)}" is already assigned to "${ACTION_LABELS[other]}"`)
+          return
+        }
+      }
+      setKbPerAction(prev => ({ ...prev, [action]: newKeys }))
+      setCapturing(false)
+      setKbConflict(null)
+    }
+    window.addEventListener('keydown', handler, true)
+    return () => window.removeEventListener('keydown', handler, true)
+  }, [open, capturing, mode, selectedIdx, kbPerAction])
+
+  const cycleMode = useCallback((dir: 1 | -1) => {
+    const i = MODE_ORDER.indexOf(mode)
+    switchMode(MODE_ORDER[(i + dir + MODE_ORDER.length) % MODE_ORDER.length])
+  }, [mode, switchMode])
+
+  // Keybindings-mode list handler (active when not capturing)
+  useEffect(() => {
+    if (!open || mode !== 'keybindings' || capturing) return
+    const handler = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement
+      if (target.tagName === 'INPUT') return
+      if (e.key === 'ArrowUp' || e.key === 'k') {
+        e.preventDefault()
+        setSelectedIdx(p => Math.max(0, p - 1))
+      } else if (e.key === 'ArrowDown' || e.key === 'j') {
+        e.preventDefault()
+        setSelectedIdx(p => Math.min(ALL_ACTIONS.length - 1, p + 1))
+      } else if (e.key === 'Tab') {
+        e.preventDefault()
+        cycleMode(e.shiftKey ? -1 : 1)
+      } else if (e.key === 'Enter') {
+        e.preventDefault()
+        setKbConflict(null)
+        setCapturing(true)
+      } else if (e.key === 'Backspace' || e.key === 'Delete') {
+        e.preventDefault()
+        resetActionToDefault(ALL_ACTIONS[selectedIdx])
+      } else if (e.key === 'r' || e.key === 'R') {
+        e.preventDefault()
+        resetAllToDefault()
+      } else if (e.key === 's' || e.key === 'S') {
+        e.preventDefault()
+        handleSave()
+      } else if (e.key === 'Escape') {
+        e.preventDefault()
+        onClose()
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [open, mode, capturing, selectedIdx, cycleMode, resetActionToDefault, resetAllToDefault, handleSave, onClose])
+
+  // List keyboard handler for tags/projects (active when not editing)
+  useEffect(() => {
+    if (!open || mode === 'keybindings' || editingIdx !== null) return
     const handler = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement
       if (target.tagName === 'INPUT') return
@@ -166,7 +279,7 @@ export default function ConfigDialog({ open, tags: initialTags, projects: initia
         }
       } else if (e.key === 'Tab') {
         e.preventDefault()
-        if (!confirmDelete) switchMode(mode === 'tags' ? 'projects' : 'tags')
+        if (!confirmDelete) cycleMode(e.shiftKey ? -1 : 1)
       } else if (e.key === 'Enter') {
         e.preventDefault()
         if (entries.length > 0 && !confirmDelete) startEdit(selectedIdx, entries)
@@ -190,7 +303,7 @@ export default function ConfigDialog({ open, tags: initialTags, projects: initia
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [open, editingIdx, entries, mode, selectedIdx, confirmDelete, startEdit, startAdd, deleteSelected, moveEntry, switchMode, handleSave, onClose])
+  }, [open, editingIdx, entries, mode, selectedIdx, confirmDelete, startEdit, startAdd, deleteSelected, moveEntry, cycleMode, handleSave, onClose])
 
   if (!open) return null
 
@@ -212,7 +325,7 @@ export default function ConfigDialog({ open, tags: initialTags, projects: initia
             {TITLES[mode]}
           </div>
           <div style={{ display: 'flex', gap: 6, fontSize: 11 }}>
-            {(['tags', 'projects'] as Mode[]).map(m => (
+            {MODE_ORDER.map(m => (
               <span
                 key={m}
                 onClick={() => switchMode(m)}
@@ -225,12 +338,22 @@ export default function ConfigDialog({ open, tags: initialTags, projects: initia
                   border: `1px solid ${mode === m ? BORDER_NORMAL : 'transparent'}`,
                 }}
               >
-                {m === 'tags' ? 'Tags' : 'Projects'}
+                {m === 'tags' ? 'Tags' : m === 'projects' ? 'Projects' : 'Keybindings'}
               </span>
             ))}
           </div>
         </div>
 
+        {mode === 'keybindings' ? (
+          <KeybindingsList
+            perAction={kbPerAction}
+            selectedIdx={selectedIdx}
+            capturing={capturing}
+            onSelect={(idx) => { setSelectedIdx(idx); setCapturing(false); setKbConflict(null) }}
+            onCapture={(idx) => { setSelectedIdx(idx); setKbConflict(null); setCapturing(true) }}
+          />
+        ) : (
+        <>
         {/* Column headers */}
         <div style={{
           display: 'grid',
@@ -301,6 +424,8 @@ export default function ConfigDialog({ open, tags: initialTags, projects: initia
             )
           })}
         </div>
+        </>
+        )}
 
         {/* Footer */}
         <div style={{
@@ -311,7 +436,17 @@ export default function ConfigDialog({ open, tags: initialTags, projects: initia
           color: TEXT_DIM,
           minHeight: 24,
         }}>
-          {confirmDelete && entries[selectedIdx] ? (
+          {mode === 'keybindings' ? (
+            kbConflict ? (
+              <span style={{ color: ACCENT_RED }}>{kbConflict} · another key or Esc</span>
+            ) : capturing ? (
+              <span style={{ color: TEXT_PRIMARY }}>
+                Press key for "{ACTION_LABELS[ALL_ACTIONS[selectedIdx]]}"… · Esc Cancel
+              </span>
+            ) : (
+              <span>↑↓ Navigate · Enter Rebind · Backspace Reset · R Reset all · S Save · Tab Switch · Esc Close</span>
+            )
+          ) : confirmDelete && entries[selectedIdx] ? (
             <span style={{ color: ACCENT_RED }}>
               Delete "{entries[selectedIdx].name}"? D=Yes · Esc=Cancel
             </span>
@@ -321,6 +456,76 @@ export default function ConfigDialog({ open, tags: initialTags, projects: initia
         </div>
       </div>
     </Overlay>
+  )
+}
+
+interface KeybindingsListProps {
+  perAction: Record<string, string[]>
+  selectedIdx: number
+  capturing: boolean
+  onSelect: (idx: number) => void
+  onCapture: (idx: number) => void
+}
+
+function KeybindingsList({ perAction, selectedIdx, capturing, onSelect, onCapture }: KeybindingsListProps) {
+  return (
+    <>
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: '1fr 200px',
+        gap: 8,
+        padding: '0 8px 6px',
+        borderBottom: `1px solid ${BORDER_NORMAL}`,
+        fontSize: 11,
+        color: TEXT_DIM,
+      }}>
+        <span>Action</span>
+        <span>Keys</span>
+      </div>
+      <div style={{ overflowY: 'auto', minHeight: 120, maxHeight: 360 }}>
+        {ALL_ACTIONS.map((action, idx) => {
+          const isSelected = idx === selectedIdx
+          const isCapturing = isSelected && capturing
+          const keys = perAction[action] ?? []
+          return (
+            <div
+              key={action}
+              onClick={() => onSelect(idx)}
+              onDoubleClick={() => onCapture(idx)}
+              style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 200px',
+                gap: 8,
+                padding: '5px 8px',
+                background: isSelected ? BG_SELECTED : 'transparent',
+                cursor: 'pointer',
+                fontSize: 12,
+                alignItems: 'center',
+              }}
+            >
+              <span style={{ color: TEXT_PRIMARY }}>{ACTION_LABELS[action]}</span>
+              <span style={{ display: 'flex', gap: 4, flexWrap: 'wrap', alignItems: 'center' }}>
+                {isCapturing ? (
+                  <span style={{ color: TEXT_PRIMARY, fontStyle: 'italic' }}>Press key…</span>
+                ) : keys.length === 0 ? (
+                  <span style={{ color: TEXT_DIM }}>—</span>
+                ) : (
+                  keys.map(k => (
+                    <code key={k} style={{
+                      background: '#1a2030',
+                      padding: '1px 6px',
+                      borderRadius: 3,
+                      fontSize: 11,
+                      color: TEXT_SECONDARY,
+                    }}>{k}</code>
+                  ))
+                )}
+              </span>
+            </div>
+          )
+        })}
+      </div>
+    </>
   )
 }
 

@@ -17,6 +17,7 @@ pub fn run() {
             init_db,
             save_tags,
             save_projects,
+            save_keybindings,
             open_db_file,
             // log
             log_add,

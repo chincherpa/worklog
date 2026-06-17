@@ -29,7 +29,7 @@ const KIND_ICON: Record<SearchHitKind, string> = {
 const KIND_LABEL: Record<SearchHitKind, string> = {
   log: 'Log',
   todo: 'Todo',
-  note: 'Notiz',
+  note: 'Note',
   subtodo: 'Subtask',
 }
 
@@ -118,7 +118,7 @@ export default function GlobalSearchBar({ dbPath, searchInputRef, onSelect, styl
         onKeyDown={onKeyDown}
         onFocus={() => { if (results.length > 0) setOpen(true) }}
         onBlur={() => setTimeout(close, 120)}
-        placeholder="🔍 Suche… (Strg+F)"
+        placeholder="🔍 Search… (Ctrl+F)"
         spellCheck={false}
         style={{
           width: '100%',
@@ -178,7 +178,7 @@ export default function GlobalSearchBar({ dbPath, searchInputRef, onSelect, styl
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
                 }}>
-                  {hit.title || '(leer)'}
+                  {hit.title || '(empty)'}
                 </span>
                 {hit.snippet && hit.snippet !== hit.title && (
                   <span style={{
