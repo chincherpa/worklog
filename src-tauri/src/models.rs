@@ -35,6 +35,8 @@ pub struct Todo {
     pub created_at: String,
     pub done_at: Option<String>,
     pub sort_order: i64,
+    pub scheduled_at: Option<String>,
+    pub est_duration_min: Option<i64>,
     pub total_sessions: i64,
     pub total_duration_s: i64,
 }

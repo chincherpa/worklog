@@ -10,13 +10,17 @@ interface Props {
   dbPath: string
   onClose: () => void
   onSubtodosChange?: () => void
+  onTodoChange?: () => void
 }
 
-export default function TodoDetailDialog({ open, todo, dbPath, onClose, onSubtodosChange }: Props) {
+export default function TodoDetailDialog({ open, todo, dbPath, onClose, onSubtodosChange, onTodoChange }: Props) {
   const [subTodos, setSubTodos] = useState<SubTodo[]>([])
   const [notes, setNotes] = useState<TodoNote[]>([])
   const [subInput, setSubInput] = useState('')
   const [noteInput, setNoteInput] = useState('')
+  const [schedDate, setSchedDate] = useState('')
+  const [schedTime, setSchedTime] = useState('')
+  const [durationH, setDurationH] = useState('')
 
   useEffect(() => {
     if (!open || !todo) return
@@ -27,16 +31,40 @@ export default function TodoDetailDialog({ open, todo, dbPath, onClose, onSubtod
       setSubTodos(subs)
       setNotes(ns.slice(-12))
     }).catch(console.error)
+    // Termin "YYYY-MM-DD HH:MM:SS" -> date + time inputs
+    setSchedDate(todo.scheduled_at ? todo.scheduled_at.slice(0, 10) : '')
+    setSchedTime(todo.scheduled_at ? todo.scheduled_at.slice(11, 16) : '')
+    setDurationH(todo.est_duration_min != null ? String(todo.est_duration_min / 60) : '')
   }, [open, todo?.id, dbPath])
+
+  const handleClose = async () => {
+    if (todo) {
+      // Compose Termin; empty date clears it (backend treats "" as NULL).
+      const scheduledAt = schedDate ? `${schedDate} ${schedTime || '00:00'}:00` : ''
+      const hours = parseFloat(durationH.replace(',', '.'))
+      const estDurationMin = Number.isFinite(hours) && hours > 0 ? Math.round(hours * 60) : 0
+      const prevAt = todo.scheduled_at ?? ''
+      const prevMin = todo.est_duration_min ?? 0
+      if (scheduledAt !== prevAt || estDurationMin !== prevMin) {
+        try {
+          await api.todoUpdate(dbPath, todo.id, undefined, undefined, undefined, scheduledAt, estDurationMin)
+          onTodoChange?.()
+        } catch (e) {
+          console.error(e)
+        }
+      }
+    }
+    onClose()
+  }
 
   useEffect(() => {
     if (!open) return
     const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
+      if (e.key === 'Escape') handleClose()
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [open, onClose])
+  }, [open, handleClose])
 
   if (!open || !todo) return null
 
@@ -80,6 +108,29 @@ export default function TodoDetailDialog({ open, todo, dbPath, onClose, onSubtod
         <div>
           <div style={{ fontSize: 14, color: TEXT_PRIMARY, fontWeight: 600 }}>{todo.title}</div>
           {todo.context && <div style={{ fontSize: 11, color: TEXT_DIM, marginTop: 2 }}>{todo.context}</div>}
+        </div>
+
+        {/* Termin & Dauer */}
+        <div>
+          <div style={{ fontSize: 11, color: TEXT_SECONDARY, marginBottom: 6 }}>Termin &amp; Dauer</div>
+          <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end' }}>
+            <label style={{ flex: 1, fontSize: 10, color: TEXT_DIM }}>
+              Datum
+              <input type="date" value={schedDate} onChange={e => setSchedDate(e.target.value)} style={inputStyle} />
+            </label>
+            <label style={{ width: 90, fontSize: 10, color: TEXT_DIM }}>
+              Uhrzeit
+              <input type="time" value={schedTime} onChange={e => setSchedTime(e.target.value)} style={inputStyle} />
+            </label>
+            <label style={{ width: 90, fontSize: 10, color: TEXT_DIM }}>
+              Dauer (h)
+              <input
+                type="number" step="0.5" min="0" placeholder="z.B. 1.5"
+                value={durationH} onChange={e => setDurationH(e.target.value)}
+                style={inputStyle}
+              />
+            </label>
+          </div>
         </div>
 
         {/* Sub-todos */}
@@ -140,7 +191,7 @@ export default function TodoDetailDialog({ open, todo, dbPath, onClose, onSubtod
         </div>
 
         <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-          <button onClick={onClose} style={{
+          <button onClick={handleClose} style={{
             padding: '6px 16px',
             border: `1px solid ${BORDER_NORMAL}`,
             borderRadius: 4,

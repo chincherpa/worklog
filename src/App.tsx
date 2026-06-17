@@ -711,6 +711,7 @@ export default function App() {
         dbPath={app.dbPath}
         onClose={closeDialog}
         onSubtodosChange={() => setSubtodosRevision(r => r + 1)}
+        onTodoChange={() => app.loadTodos()}
       />
 
       <WeeklyReviewDialog

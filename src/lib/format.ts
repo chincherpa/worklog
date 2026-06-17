@@ -63,3 +63,22 @@ export function truncate(text: string, maxLen: number): string {
 export function firstLine(text: string): string {
   return text.split('\n')[0]
 }
+
+// "2026-06-17 14:00:00" -> "17.06 14:00"
+export function formatScheduled(s: string): string {
+  const date = s.slice(8, 10) + '.' + s.slice(5, 7)
+  const time = s.slice(11, 16)
+  return `${date} ${time}`
+}
+
+// minutes -> compact hours, e.g. 90 -> "1.5h", 120 -> "2h"
+export function formatEstDuration(min: number): string {
+  const h = min / 60
+  const str = Number.isInteger(h) ? String(h) : h.toFixed(1)
+  return `${str}h`
+}
+
+// Termin in the past and todo not done.
+export function isOverdue(scheduledAt: string): boolean {
+  return new Date(scheduledAt.replace(' ', 'T')).getTime() < Date.now()
+}

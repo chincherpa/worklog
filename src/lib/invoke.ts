@@ -58,8 +58,8 @@ export const api = {
     invoke<Todo[]>('todo_list', { dbPath, status }),
   todoSetStatus: (dbPath: string, todoId: number, status: string) =>
     invoke<Todo>('todo_set_status', { dbPath, todoId, status }),
-  todoUpdate: (dbPath: string, todoId: number, title?: string, context?: string, priority?: string) =>
-    invoke<Todo>('todo_update', { dbPath, todoId, title, context, priority }),
+  todoUpdate: (dbPath: string, todoId: number, title?: string, context?: string, priority?: string, scheduledAt?: string, estDurationMin?: number) =>
+    invoke<Todo>('todo_update', { dbPath, todoId, title, context, priority, scheduledAt, estDurationMin }),
   todoDelete: (dbPath: string, todoId: number) =>
     invoke<boolean>('todo_delete', { dbPath, todoId }),
   todoReorder: (dbPath: string, todoId: number, direction: 1 | -1) =>

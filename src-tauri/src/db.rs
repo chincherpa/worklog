@@ -44,6 +44,7 @@ pub fn migrate(db_path: &str) -> Result<i64, String> {
         (7, MIGRATION_7),
         (8, MIGRATION_8),
         (9, MIGRATION_9),
+        (10, MIGRATION_10),
     ];
 
     for (version, sql) in migrations {
@@ -57,6 +58,9 @@ pub fn migrate(db_path: &str) -> Result<i64, String> {
         } else if *version == 9 {
             add_column_if_missing(&conn, "todos", "sort_order", "INTEGER NOT NULL DEFAULT 0").map_err(|e| e.to_string())?;
             backfill_todo_sort_order(&conn).map_err(|e| e.to_string())?;
+        } else if *version == 10 {
+            add_column_if_missing(&conn, "todos", "scheduled_at", "TEXT").map_err(|e| e.to_string())?;
+            add_column_if_missing(&conn, "todos", "est_duration_min", "INTEGER").map_err(|e| e.to_string())?;
         } else {
             exec_migration_sql(&conn, sql).map_err(|e| e.to_string())?;
         }
@@ -286,3 +290,6 @@ const MIGRATION_8: &str = "";
 
 // Handled programmatically — adds sort_order column to todos for manual reordering.
 const MIGRATION_9: &str = "";
+
+// Handled programmatically — adds scheduled_at (Termin) and est_duration_min (geschätzte Dauer) to todos.
+const MIGRATION_10: &str = "";

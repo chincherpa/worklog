@@ -1,7 +1,9 @@
 import { useRef, useLayoutEffect } from 'react'
-import { BG_SELECTED, BORDER_ACTIVE, TEXT_DIM, TEXT_SECONDARY, STATUS_COLORS, STATUS_ICONS, PRIORITY_COLORS, PRIORITY_ICONS } from '../../theme'
-import { formatDuration } from '../../lib/format'
+import { BG_SELECTED, BORDER_ACTIVE, TEXT_DIM, TEXT_SECONDARY, ACCENT_RED, STATUS_COLORS, STATUS_ICONS, PRIORITY_COLORS, PRIORITY_ICONS } from '../../theme'
+import { formatDuration, formatScheduled, formatEstDuration, isOverdue } from '../../lib/format'
 import type { Todo } from '../../types'
+
+const DONE_STATUSES = new Set(['done', 'cancelled', 'dropped'])
 
 interface Props {
   todo: Todo
@@ -16,6 +18,7 @@ export default function TodoRow({ todo, selected, hasFocusSession, onClick }: Pr
   const statusIcon = STATUS_ICONS[effectiveStatus] ?? '○'
   const priorityColor = PRIORITY_COLORS[todo.priority] ?? '#888'
   const priorityIcon = PRIORITY_ICONS[todo.priority] ?? '●'
+  const overdue = !!todo.scheduled_at && !DONE_STATUSES.has(todo.status) && isOverdue(todo.scheduled_at)
   const ref = useRef<HTMLDivElement>(null)
 
   useLayoutEffect(() => {
@@ -51,6 +54,16 @@ export default function TodoRow({ todo, selected, hasFocusSession, onClick }: Pr
         }}>
           {todo.title}
         </span>
+        {todo.scheduled_at && (
+          <span style={{ color: overdue ? ACCENT_RED : TEXT_DIM, fontSize: 11, flexShrink: 0 }}>
+            📅 {formatScheduled(todo.scheduled_at)}
+          </span>
+        )}
+        {todo.est_duration_min != null && (
+          <span style={{ color: TEXT_DIM, fontSize: 11, flexShrink: 0 }}>
+            ⏱{formatEstDuration(todo.est_duration_min)}
+          </span>
+        )}
         {todo.total_duration_s > 0 && (
           <span style={{ color: TEXT_DIM, fontSize: 11, flexShrink: 0 }}>
             {formatDuration(todo.total_duration_s)}

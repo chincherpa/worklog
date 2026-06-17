@@ -30,6 +30,8 @@ export interface Todo {
   created_at: string
   done_at: string | null
   sort_order: number
+  scheduled_at: string | null
+  est_duration_min: number | null
   total_sessions: number
   total_duration_s: number
 }

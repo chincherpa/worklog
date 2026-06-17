@@ -19,6 +19,8 @@ fn row_to_todo(row: &rusqlite::Row) -> rusqlite::Result<Todo> {
         created_at: row.get("created_at")?,
         done_at: row.get("done_at")?,
         sort_order: row.get("sort_order").unwrap_or(0),
+        scheduled_at: row.get("scheduled_at").unwrap_or(None),
+        est_duration_min: row.get("est_duration_min").unwrap_or(None),
         total_sessions,
         total_duration_s,
     })
@@ -120,6 +122,8 @@ pub fn todo_update(
     title: Option<String>,
     context: Option<String>,
     priority: Option<String>,
+    scheduled_at: Option<String>,
+    est_duration_min: Option<i64>,
 ) -> Result<Todo, String> {
     let conn = get_connection(&db_path).map_err(|e| e.to_string())?;
     let mut parts: Vec<String> = Vec::new();
@@ -136,6 +140,18 @@ pub fn todo_update(
     if let Some(p) = priority {
         parts.push("priority = ?".to_string());
         bind.push(Box::new(p));
+    }
+    // Empty string clears the Termin (NULL); otherwise set the value.
+    if let Some(s) = scheduled_at {
+        parts.push("scheduled_at = ?".to_string());
+        let val: Option<String> = if s.trim().is_empty() { None } else { Some(s) };
+        bind.push(Box::new(val));
+    }
+    // 0 or negative clears the estimated duration (NULL).
+    if let Some(d) = est_duration_min {
+        parts.push("est_duration_min = ?".to_string());
+        let val: Option<i64> = if d > 0 { Some(d) } else { None };
+        bind.push(Box::new(val));
     }
 
     if !parts.is_empty() {
