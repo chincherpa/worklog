@@ -250,6 +250,10 @@ export default function App() {
       case 'todoDone': {
         const todo = todos[todoIdx]
         if (!todo || !dbPath) break
+        if (todo.status === 'done') {
+          showToast(`${todo.title.slice(0, 30)} bereits erledigt`, 'info')
+          break
+        }
         await api.todoSetStatus(dbPath, todo.id, 'done')
         const tags = config?.tags ?? []
         const doneTag = tags.find(t => t.key === 'done')
