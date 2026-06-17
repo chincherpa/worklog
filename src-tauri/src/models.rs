@@ -34,6 +34,7 @@ pub struct Todo {
     pub tags: Vec<String>,
     pub created_at: String,
     pub done_at: Option<String>,
+    pub sort_order: i64,
     pub total_sessions: i64,
     pub total_duration_s: i64,
 }

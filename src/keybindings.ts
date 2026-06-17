@@ -17,6 +17,8 @@ export type ActionName =
   | 'todoDetail'
   | 'arrowUp'
   | 'arrowDown'
+  | 'todoMoveUp'
+  | 'todoMoveDown'
   | 'cyclePanel'
   | 'cyclePanelBack'
   | 'nextFilter'
@@ -47,6 +49,8 @@ const BINDINGS: Record<string, ActionName> = {
   A: 'addTodo',
   ArrowDown: 'arrowDown',
   ArrowUp: 'arrowUp',
+  'Shift+ArrowUp': 'todoMoveUp',
+  'Shift+ArrowDown': 'todoMoveDown',
   b: 'prevFilter',
   B: 'prevFilter',
   c: 'changeTag',

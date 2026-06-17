@@ -39,7 +39,18 @@ export default function TodoPanel({
   dbPath, isActive, logEntries, onTodoSelect, subtodosRevision, style,
 }: Props) {
   const [expanded, setExpanded] = useState<ExpandedData | null>(null)
+  const [collapsedId, setCollapsedId] = useState<number | null>(null)
   const selectedTodo = todos[todoIdx]
+
+  // Click selected todo again -> collapse; click another -> select + expand.
+  const handleRowClick = (globalIdx: number, todoId: number) => {
+    if (globalIdx === todoIdx) {
+      setCollapsedId(prev => (prev === todoId ? null : todoId))
+    } else {
+      setCollapsedId(null)
+      onTodoSelect(globalIdx)
+    }
+  }
 
   const activeTodos = todos.filter(t => !DONE_STATUSES.has(t.status))
   const doneTodos = todos.filter(t => DONE_STATUSES.has(t.status))
@@ -110,9 +121,9 @@ export default function TodoPanel({
                 todo={todo}
                 selected={globalIdx === todoIdx}
                 hasFocusSession={hasFocus}
-                onClick={() => onTodoSelect(globalIdx)}
+                onClick={() => handleRowClick(globalIdx, todo.id)}
               />
-              {globalIdx === todoIdx && expanded?.todoId === todo.id && (
+              {globalIdx === todoIdx && expanded?.todoId === todo.id && collapsedId !== todo.id && (
                 <ExpandedSection expanded={expanded} />
               )}
             </div>
@@ -141,9 +152,9 @@ export default function TodoPanel({
                     todo={todo}
                     selected={globalIdx === todoIdx}
                     hasFocusSession={false}
-                    onClick={() => onTodoSelect(globalIdx)}
+                    onClick={() => handleRowClick(globalIdx, todo.id)}
                   />
-                  {globalIdx === todoIdx && expanded?.todoId === todo.id && (
+                  {globalIdx === todoIdx && expanded?.todoId === todo.id && collapsedId !== todo.id && (
                     <ExpandedSection expanded={expanded} />
                   )}
                 </div>

@@ -10,6 +10,8 @@ interface Props {
 const BINDINGS = [
   ['↑', 'Navigate up'],
   ['↓', 'Navigate down'],
+  ['Shift+↑', 'Move todo up'],
+  ['Shift+↓', 'Move todo down'],
   ['A', 'New todo'],
   ['B', 'Previous filter'],
   ['C', 'Change entry tag'],
@@ -57,14 +59,37 @@ export default function KeybindingsHelpDialog({ open, onClose }: Props) {
         background: BG_PANEL,
         border: `1px solid ${BORDER_NORMAL}`,
         borderRadius: 6,
-        padding: 20,
         width: 460,
         maxHeight: 500,
-        overflowY: 'auto',
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden',
       }}>
-        <div style={{ fontSize: 13, color: TEXT_PRIMARY, marginBottom: 12, fontWeight: 600 }}>
-          ⌨ Keyboard Shortcuts
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '14px 20px',
+          borderBottom: `1px solid ${BORDER_NORMAL}`,
+          flexShrink: 0,
+        }}>
+          <div style={{ fontSize: 13, color: TEXT_PRIMARY, fontWeight: 600 }}>
+            ⌨ Keyboard Shortcuts
+          </div>
+          <button onClick={onClose} style={{
+            padding: '5px 14px',
+            border: `1px solid ${BORDER_NORMAL}`,
+            borderRadius: 4,
+            background: 'transparent',
+            color: TEXT_DIM,
+            cursor: 'pointer',
+            fontSize: 12,
+            fontFamily: 'inherit',
+          }}>
+            Close (Esc)
+          </button>
         </div>
+        <div style={{ overflowY: 'auto', padding: '12px 20px' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <tbody>
             {BINDINGS.map(([key, desc]) => (
@@ -87,19 +112,6 @@ export default function KeybindingsHelpDialog({ open, onClose }: Props) {
             ))}
           </tbody>
         </table>
-        <div style={{ marginTop: 12, display: 'flex', justifyContent: 'flex-end' }}>
-          <button onClick={onClose} style={{
-            padding: '5px 14px',
-            border: `1px solid ${BORDER_NORMAL}`,
-            borderRadius: 4,
-            background: 'transparent',
-            color: TEXT_DIM,
-            cursor: 'pointer',
-            fontSize: 12,
-            fontFamily: 'inherit',
-          }}>
-            Close (Esc)
-          </button>
         </div>
       </div>
     </Overlay>

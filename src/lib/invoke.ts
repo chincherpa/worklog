@@ -56,6 +56,8 @@ export const api = {
     invoke<Todo>('todo_update', { dbPath, todoId, title, context, priority }),
   todoDelete: (dbPath: string, todoId: number) =>
     invoke<boolean>('todo_delete', { dbPath, todoId }),
+  todoReorder: (dbPath: string, todoId: number, direction: 1 | -1) =>
+    invoke<Todo[]>('todo_reorder', { dbPath, todoId, direction }),
   todoSearch: (dbPath: string, query: string, limit?: number) =>
     invoke<Todo[]>('todo_search', { dbPath, query, limit }),
 

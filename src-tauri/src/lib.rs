@@ -34,6 +34,7 @@ pub fn run() {
             todo_set_status,
             todo_update,
             todo_delete,
+            todo_reorder,
             todo_search,
             // session
             session_start,

@@ -43,6 +43,7 @@ pub fn migrate(db_path: &str) -> Result<i64, String> {
         (6, MIGRATION_6),
         (7, MIGRATION_7),
         (8, MIGRATION_8),
+        (9, MIGRATION_9),
     ];
 
     for (version, sql) in migrations {
@@ -53,6 +54,9 @@ pub fn migrate(db_path: &str) -> Result<i64, String> {
             add_column_if_missing(&conn, "todos", "tags", "TEXT").map_err(|e| e.to_string())?;
         } else if *version == 8 {
             add_column_if_missing(&conn, "log_entries", "project", "TEXT NOT NULL DEFAULT 'work'").map_err(|e| e.to_string())?;
+        } else if *version == 9 {
+            add_column_if_missing(&conn, "todos", "sort_order", "INTEGER NOT NULL DEFAULT 0").map_err(|e| e.to_string())?;
+            backfill_todo_sort_order(&conn).map_err(|e| e.to_string())?;
         } else {
             exec_migration_sql(&conn, sql).map_err(|e| e.to_string())?;
         }
@@ -82,6 +86,27 @@ fn add_column_if_missing(conn: &Connection, table: &str, column: &str, col_type:
         .unwrap_or(false);
     if !exists {
         conn.execute_batch(&format!("ALTER TABLE {} ADD COLUMN {} {};", table, column, col_type))?;
+    }
+    Ok(())
+}
+
+// Backfill sort_order to match the previous display order (priority, then newest first)
+// so the visible list is unchanged right after migration. Smaller value = higher in list.
+fn backfill_todo_sort_order(conn: &Connection) -> Result<()> {
+    let mut stmt = conn.prepare(
+        "SELECT id FROM todos
+         ORDER BY CASE priority WHEN 'high' THEN 0 WHEN 'normal' THEN 1 ELSE 2 END,
+                  created_at DESC",
+    )?;
+    let ids: Vec<i64> = stmt
+        .query_map([], |row| row.get(0))?
+        .collect::<Result<_, _>>()?;
+    drop(stmt);
+    for (i, id) in ids.iter().enumerate() {
+        conn.execute(
+            "UPDATE todos SET sort_order = ?1 WHERE id = ?2",
+            rusqlite::params![i as i64, id],
+        )?;
     }
     Ok(())
 }
@@ -258,3 +283,6 @@ const MIGRATION_7: &str = "";
 
 // Handled programmatically — adds project column to log_entries if missing.
 const MIGRATION_8: &str = "";
+
+// Handled programmatically — adds sort_order column to todos for manual reordering.
+const MIGRATION_9: &str = "";

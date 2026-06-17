@@ -3,13 +3,11 @@ import { api } from './lib/invoke'
 import type { ActivePanel, AppConfig, FocusSession, LogEntry, Project, Tag, Todo } from './types'
 
 const DONE_STATUSES = new Set(['done', 'cancelled', 'dropped'])
-const PRIORITY_RANK: Record<string, number> = { high: 0, normal: 1, low: 2 }
 
 function sortTodosForDisplay(todos: Todo[]): Todo[] {
-  const sortByPriority = (a: Todo, b: Todo) =>
-    (PRIORITY_RANK[a.priority] ?? 1) - (PRIORITY_RANK[b.priority] ?? 1)
-  const active = todos.filter(t => !DONE_STATUSES.has(t.status)).sort(sortByPriority)
-  const done = todos.filter(t => DONE_STATUSES.has(t.status))
+  const byOrder = (a: Todo, b: Todo) => a.sort_order - b.sort_order
+  const active = todos.filter(t => !DONE_STATUSES.has(t.status)).sort(byOrder)
+  const done = todos.filter(t => DONE_STATUSES.has(t.status)).sort(byOrder)
   return [...active, ...done]
 }
 
@@ -53,6 +51,7 @@ export interface AppActions {
   setDisplayedEntry: (id: number | null) => void
   setTodoIdx: (idx: number) => void
   moveTodoIdx: (dir: 1 | -1) => void
+  reorderTodo: (todoId: number, dir: 1 | -1) => Promise<void>
   moveLogIdx: (dir: 1 | -1) => void
   setActivePanel: (panel: ActivePanel) => void
   cyclePanel: (dir: 1 | -1) => void
@@ -260,6 +259,18 @@ export function useAppState(): AppState & AppActions {
     })
   }, [])
 
+  const reorderTodo = useCallback(async (todoId: number, dir: 1 | -1) => {
+    const s = stateRef.current
+    if (!s.dbPath) return
+    try {
+      const todos = sortTodosForDisplay(await api.todoReorder(s.dbPath, todoId, dir))
+      const idx = todos.findIndex(t => t.id === todoId)
+      setState(prev => ({ ...prev, todos, todoIdx: idx >= 0 ? idx : prev.todoIdx }))
+    } catch (e) {
+      setState(prev => ({ ...prev, error: String(e) }))
+    }
+  }, [])
+
   const moveLogIdx = useCallback((dir: 1 | -1) => {
     setState(prev => {
       const filtered = prev.logEntries.filter(e =>
@@ -349,6 +360,7 @@ export function useAppState(): AppState & AppActions {
     setDisplayedEntry,
     setTodoIdx,
     moveTodoIdx,
+    reorderTodo,
     moveLogIdx,
     setActivePanel,
     cyclePanel,

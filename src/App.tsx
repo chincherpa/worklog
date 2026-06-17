@@ -177,6 +177,20 @@ export default function App() {
         else app.moveLogIdx(1)
         break
 
+      case 'todoMoveUp': {
+        if (app.activePanel !== 'todo') break
+        const todo = todos[todoIdx]
+        if (todo && dbPath) await app.reorderTodo(todo.id, -1)
+        break
+      }
+
+      case 'todoMoveDown': {
+        if (app.activePanel !== 'todo') break
+        const todo = todos[todoIdx]
+        if (todo && dbPath) await app.reorderTodo(todo.id, 1)
+        break
+      }
+
       case 'cyclePanel':
         app.cyclePanel(1)
         break

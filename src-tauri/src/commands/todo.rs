@@ -18,6 +18,7 @@ fn row_to_todo(row: &rusqlite::Row) -> rusqlite::Result<Todo> {
         tags,
         created_at: row.get("created_at")?,
         done_at: row.get("done_at")?,
+        sort_order: row.get("sort_order").unwrap_or(0),
         total_sessions,
         total_duration_s,
     })
@@ -42,9 +43,12 @@ pub fn todo_add(
     let priority = priority.unwrap_or_else(|| "normal".to_string());
     let title = title.trim().to_string();
 
+    // New todos go to the top of the active list (smallest sort_order).
     let row_id: i64 = conn
         .query_row(
-            "INSERT INTO todos (title, context, priority) VALUES (?1, ?2, ?3) RETURNING id",
+            "INSERT INTO todos (title, context, priority, sort_order)
+             VALUES (?1, ?2, ?3, (SELECT COALESCE(MIN(sort_order), 0) - 1 FROM todos))
+             RETURNING id",
             params![title, context, priority],
             |row| row.get(0),
         )
@@ -86,9 +90,7 @@ pub fn todo_list(
 
     let sql = format!(
         r#"{} {} GROUP BY t.id
-        ORDER BY
-            CASE t.priority WHEN 'high' THEN 0 WHEN 'normal' THEN 1 ELSE 2 END,
-            t.created_at DESC"#,
+        ORDER BY t.sort_order ASC, t.created_at DESC"#,
         TODO_SELECT_WITH_STATS, where_clause
     );
 
@@ -160,6 +162,48 @@ pub fn todo_delete(db_path: String, todo_id: i64) -> Result<bool, String> {
         .execute("DELETE FROM todos WHERE id = ?1", params![todo_id])
         .map_err(|e| e.to_string())?;
     Ok(rows > 0)
+}
+
+/// Move a todo up (direction = -1) or down (direction = +1) within the active list.
+/// Swaps sort_order with the adjacent active (non-done) todo. No-op at the ends.
+#[tauri::command]
+pub fn todo_reorder(db_path: String, todo_id: i64, direction: i64) -> Result<Vec<Todo>, String> {
+    let conn = get_connection(&db_path).map_err(|e| e.to_string())?;
+
+    let active: Vec<(i64, i64)> = {
+        let mut stmt = conn
+            .prepare(
+                "SELECT id, sort_order FROM todos
+                 WHERE status NOT IN ('done', 'cancelled', 'dropped')
+                 ORDER BY sort_order ASC, created_at DESC",
+            )
+            .map_err(|e| e.to_string())?;
+        let rows = stmt
+            .query_map([], |row| Ok((row.get(0)?, row.get(1)?)))
+            .map_err(|e| e.to_string())?;
+        rows.collect::<rusqlite::Result<Vec<_>>>()
+            .map_err(|e| e.to_string())?
+    };
+
+    if let Some(idx) = active.iter().position(|(id, _)| *id == todo_id) {
+        let target = idx as i64 + direction;
+        if target >= 0 && (target as usize) < active.len() {
+            let (a_id, a_order) = active[idx];
+            let (b_id, b_order) = active[target as usize];
+            conn.execute(
+                "UPDATE todos SET sort_order = ?1 WHERE id = ?2",
+                params![b_order, a_id],
+            )
+            .map_err(|e| e.to_string())?;
+            conn.execute(
+                "UPDATE todos SET sort_order = ?1 WHERE id = ?2",
+                params![a_order, b_id],
+            )
+            .map_err(|e| e.to_string())?;
+        }
+    }
+
+    todo_list(db_path, None)
 }
 
 #[tauri::command]

@@ -29,6 +29,7 @@ export interface Todo {
   tags: string[]
   created_at: string
   done_at: string | null
+  sort_order: number
   total_sessions: number
   total_duration_s: number
 }
