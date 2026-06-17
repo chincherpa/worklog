@@ -64,8 +64,6 @@ const BINDINGS: Record<string, ActionName> = {
   g: 'openConfig',
   G: 'openConfig',
   i: 'nextProjectFilter',
-  j: 'arrowDown',
-  k: 'arrowUp',
   l: 'focusLogInput',
   L: 'focusLogInput',
   m: 'toggleContent',

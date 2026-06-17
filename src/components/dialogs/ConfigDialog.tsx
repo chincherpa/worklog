@@ -114,6 +114,22 @@ export default function ConfigDialog({ open, tags: initialTags, projects: initia
     setIsNewEntry(false)
   }, [setEntries])
 
+  const moveEntry = useCallback((from: number, dir: -1 | 1) => {
+    const to = from + dir
+    setEntries(prev => {
+      if (to < 0 || to >= prev.length) return prev
+      const next = [...prev]
+      const [moved] = next.splice(from, 1)
+      next.splice(to, 0, moved)
+      return next
+    })
+    setSelectedIdx(prev => {
+      const t = prev + dir
+      return t < 0 || t >= entries.length ? prev : t
+    })
+    setConfirmDelete(false)
+  }, [setEntries, entries.length])
+
   const deleteSelected = useCallback((idx: number) => {
     setEntries(prev => prev.filter((_, i) => i !== idx))
     setSelectedIdx(Math.max(0, idx - 1))
@@ -134,12 +150,20 @@ export default function ConfigDialog({ open, tags: initialTags, projects: initia
 
       if (e.key === 'ArrowUp' || e.key === 'k') {
         e.preventDefault()
-        setSelectedIdx(p => Math.max(0, p - 1))
-        setConfirmDelete(false)
+        if (e.shiftKey) {
+          if (!confirmDelete) moveEntry(selectedIdx, -1)
+        } else {
+          setSelectedIdx(p => Math.max(0, p - 1))
+          setConfirmDelete(false)
+        }
       } else if (e.key === 'ArrowDown' || e.key === 'j') {
         e.preventDefault()
-        setSelectedIdx(p => Math.min(entries.length - 1, p + 1))
-        setConfirmDelete(false)
+        if (e.shiftKey) {
+          if (!confirmDelete) moveEntry(selectedIdx, 1)
+        } else {
+          setSelectedIdx(p => Math.min(entries.length - 1, p + 1))
+          setConfirmDelete(false)
+        }
       } else if (e.key === 'Tab') {
         e.preventDefault()
         if (!confirmDelete) switchMode(mode === 'tags' ? 'projects' : 'tags')
@@ -166,7 +190,7 @@ export default function ConfigDialog({ open, tags: initialTags, projects: initia
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [open, editingIdx, entries, mode, selectedIdx, confirmDelete, startEdit, startAdd, deleteSelected, switchMode, handleSave, onClose])
+  }, [open, editingIdx, entries, mode, selectedIdx, confirmDelete, startEdit, startAdd, deleteSelected, moveEntry, switchMode, handleSave, onClose])
 
   if (!open) return null
 
@@ -292,7 +316,7 @@ export default function ConfigDialog({ open, tags: initialTags, projects: initia
               Delete "{entries[selectedIdx].name}"? D=Yes · Esc=Cancel
             </span>
           ) : (
-            <span>↑↓ Navigate · Enter Edit · N New · D Delete · S Save · Tab Switch · Esc Close</span>
+            <span>↑↓ Navigate · ⇧↑↓ Move · Enter Edit · N New · D Delete · S Save · Tab Switch · Esc Close</span>
           )}
         </div>
       </div>
