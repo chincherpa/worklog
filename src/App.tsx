@@ -9,6 +9,7 @@ import { BG_BASE } from './theme'
 import LogPanel from './components/panels/LogPanel'
 import ContentPanel from './components/panels/ContentPanel'
 import TodoPanel from './components/panels/TodoPanel'
+import GlobalSearchBar from './components/panels/GlobalSearchBar'
 import ConfirmDialog from './components/dialogs/ConfirmDialog'
 import NewTodoDialog from './components/dialogs/NewTodoDialog'
 import ContentEditDialog, { type EntryEditResult } from './components/dialogs/ContentEditDialog'
@@ -23,7 +24,7 @@ import Toast, { useToast } from './components/widgets/Toast'
 import type { NewTodoResult } from './components/dialogs/NewTodoDialog'
 import type { FocusOutcome, FocusResult } from './components/dialogs/FocusDialog'
 import type { DebriefResult } from './components/dialogs/DebriefingDialog'
-import type { Tag, Project } from './types'
+import type { Tag, Project, SearchHit } from './types'
 
 type DialogType =
   | 'none' | 'confirm' | 'newTodo' | 'contentEdit'
@@ -63,6 +64,7 @@ export default function App() {
   const { toasts, showToast, dismiss } = useToast()
   const [dialog, setDialog] = useState<DialogData>({ type: 'none' })
   const focusInputRef = useRef<(() => void) | null>(null)
+  const searchInputRef = useRef<(() => void) | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const [panelWidths, setPanelWidths] = useState({ log: 1.2, content: 1.0, todo: 0.9 })
   const [focusPause, setFocusPause] = useState<PauseState>(PAUSE_NONE)
@@ -130,9 +132,15 @@ export default function App() {
       // Ignore when typing in dialog inputs — dialogs handle their own keys
       if (app.dialogOpen) return
 
-      // Don't intercept text input
+      // Don't intercept text input — except Ctrl+F, which must reach search
+      // even while a text field (e.g. the log input) has focus.
       const target = e.target as HTMLElement
       if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
+        if (getAction(e) === 'focusSearch') {
+          e.preventDefault()
+          handleAction('focusSearch')
+          return
+        }
         if (e.key === 'Escape') {
           target.blur()
           app.setInputFocused(false)
@@ -373,8 +381,38 @@ export default function App() {
       case 'openConfig':
         openDialog({ type: 'config' })
         break
+
+      case 'focusSearch':
+        app.setContentVisible(true)
+        setTimeout(() => searchInputRef.current?.(), 0)
+        break
     }
   }, [app, dialog, openDialog, closeDialog, showToast])
+
+  // Select a global-search hit as if the user had clicked it in the panels.
+  const handleSearchSelect = useCallback((hit: SearchHit) => {
+    if (hit.kind === 'log') {
+      // Clear view filters so the entry is guaranteed visible.
+      app.setFilter(null)
+      app.setProjectFilter(null)
+      app.setDisplayedEntry(hit.id)
+      app.setActivePanel('log')
+      return
+    }
+    const todoId = hit.target_todo_id
+    if (todoId == null) return
+    app.setTodoVisible(true)
+    const idx = app.todos.findIndex(t => t.id === todoId)
+    if (idx < 0) {
+      showToast('Eintrag nicht in aktueller Liste', 'warning')
+      return
+    }
+    app.setTodoIdx(idx)
+    app.setActivePanel('todo')
+    if (hit.kind === 'note' || hit.kind === 'subtodo') {
+      openDialog({ type: 'todoDetail' })
+    }
+  }, [app, showToast, openDialog])
 
   // Dialog result handlers
   const handleNewTodo = useCallback(async (result: NewTodoResult | null) => {
@@ -551,13 +589,26 @@ export default function App() {
       {app.contentVisible && (
         <>
           <ResizeHandle onMouseDown={e => startResize(e, 'log', 'content')} />
-          <ContentPanel
-            entries={app.logEntries}
-            displayedEntryId={app.displayedEntryId}
-            config={app.config}
-            isActive={app.activePanel === 'content'}
-            style={{ flex: panelWidths.content }}
-          />
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            flex: panelWidths.content,
+            minWidth: 0,
+            gap: 6,
+          }}>
+            <GlobalSearchBar
+              dbPath={app.dbPath}
+              searchInputRef={searchInputRef}
+              onSelect={handleSearchSelect}
+            />
+            <ContentPanel
+              entries={app.logEntries}
+              displayedEntryId={app.displayedEntryId}
+              config={app.config}
+              isActive={app.activePanel === 'content'}
+              style={{ flex: 1, minHeight: 0 }}
+            />
+          </div>
         </>
       )}
 

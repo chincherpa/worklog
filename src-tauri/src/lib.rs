@@ -27,6 +27,7 @@ pub fn run() {
             log_used_tags,
             log_get_range,
             log_search,
+            global_search,
             // todo
             todo_add,
             todo_get,

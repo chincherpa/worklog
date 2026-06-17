@@ -81,6 +81,16 @@ pub struct Project {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SearchHit {
+    pub kind: String,                // "log" | "todo" | "note" | "subtodo"
+    pub id: i64,                     // row id of the matched record
+    pub target_todo_id: Option<i64>, // parent todo for note/subtodo
+    pub title: String,               // primary line to display
+    pub snippet: String,             // matched context, trimmed
+    pub date: Option<String>,        // for ordering/display
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WeekSummary {
     pub iso_week: String,
     pub work_days: i64,

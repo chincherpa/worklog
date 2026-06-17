@@ -30,9 +30,11 @@ export type ActionName =
   | 'cycleProject'
   | 'openHelp'
   | 'openConfig'
+  | 'focusSearch'
 
 function keyStr(e: KeyboardEvent): string {
   const parts: string[] = []
+  if (e.ctrlKey && e.key !== 'Control') parts.push('Control')
   if (e.shiftKey && e.key !== 'Shift') parts.push('Shift')
   parts.push(e.key)
   return parts.join('+')
@@ -40,6 +42,8 @@ function keyStr(e: KeyboardEvent): string {
 
 const BINDINGS: Record<string, ActionName> = {
   ' ': 'todoActivate',
+  'Control+f': 'focusSearch',
+  'Control+F': 'focusSearch',
   '?': 'openHelp',
   'Shift+D': 'deleteEntry',
   'Shift+I': 'prevProjectFilter',

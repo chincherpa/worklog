@@ -1,5 +1,5 @@
 use crate::db::{get_connection, today};
-use crate::models::LogEntry;
+use crate::models::{LogEntry, SearchHit};
 use rusqlite::params;
 
 fn row_to_log(row: &rusqlite::Row) -> rusqlite::Result<LogEntry> {
@@ -184,4 +184,144 @@ pub fn log_search(db_path: String, query: String, limit: Option<i64>) -> Result<
         .query_map(params![pattern, lim], |row| row_to_log(row))
         .map_err(|e| e.to_string())?;
     rows.map(|r| r.map_err(|e| e.to_string())).collect()
+}
+
+/// First line of a multi-line string, used as a result title.
+fn first_line(s: &str) -> String {
+    s.lines().next().unwrap_or("").trim().to_string()
+}
+
+/// Single-line, length-capped snippet for display in the result list.
+fn snippet(s: &str) -> String {
+    let flat: String = s.split_whitespace().collect::<Vec<_>>().join(" ");
+    if flat.chars().count() > 120 {
+        let truncated: String = flat.chars().take(120).collect();
+        format!("{}…", truncated)
+    } else {
+        flat
+    }
+}
+
+/// Searches every searchable text column across the app and returns a flat,
+/// typed list of hits. Note/subtodo hits carry `target_todo_id` so the
+/// frontend can select the parent todo.
+#[tauri::command]
+pub fn global_search(
+    db_path: String,
+    query: String,
+    limit: Option<i64>,
+) -> Result<Vec<SearchHit>, String> {
+    let trimmed = query.trim();
+    if trimmed.is_empty() {
+        return Ok(Vec::new());
+    }
+    let conn = get_connection(&db_path).map_err(|e| e.to_string())?;
+    let lim = limit.unwrap_or(20);
+    let pattern = format!("%{}%", trimmed);
+    let mut hits: Vec<SearchHit> = Vec::new();
+
+    // log_entries.content
+    {
+        let mut stmt = conn
+            .prepare("SELECT id, content, date FROM log_entries WHERE content LIKE ?1 ORDER BY date DESC, created_at DESC LIMIT ?2")
+            .map_err(|e| e.to_string())?;
+        let rows = stmt
+            .query_map(params![pattern, lim], |row| {
+                let id: i64 = row.get(0)?;
+                let content: String = row.get(1)?;
+                let date: Option<String> = row.get(2)?;
+                Ok(SearchHit {
+                    kind: "log".to_string(),
+                    id,
+                    target_todo_id: None,
+                    title: first_line(&content),
+                    snippet: snippet(&content),
+                    date,
+                })
+            })
+            .map_err(|e| e.to_string())?;
+        for r in rows {
+            hits.push(r.map_err(|e| e.to_string())?);
+        }
+    }
+
+    // todos.title / todos.context
+    {
+        let mut stmt = conn
+            .prepare("SELECT id, title, context, created_at FROM todos WHERE title LIKE ?1 OR context LIKE ?1 ORDER BY created_at DESC LIMIT ?2")
+            .map_err(|e| e.to_string())?;
+        let rows = stmt
+            .query_map(params![pattern, lim], |row| {
+                let id: i64 = row.get(0)?;
+                let title: String = row.get(1)?;
+                let context: Option<String> = row.get(2)?;
+                let date: Option<String> = row.get(3)?;
+                Ok(SearchHit {
+                    kind: "todo".to_string(),
+                    id,
+                    target_todo_id: Some(id),
+                    title,
+                    snippet: context.map(|c| snippet(&c)).unwrap_or_default(),
+                    date,
+                })
+            })
+            .map_err(|e| e.to_string())?;
+        for r in rows {
+            hits.push(r.map_err(|e| e.to_string())?);
+        }
+    }
+
+    // todo_notes.content
+    {
+        let mut stmt = conn
+            .prepare("SELECT id, todo_id, content, created_at FROM todo_notes WHERE content LIKE ?1 ORDER BY created_at DESC LIMIT ?2")
+            .map_err(|e| e.to_string())?;
+        let rows = stmt
+            .query_map(params![pattern, lim], |row| {
+                let id: i64 = row.get(0)?;
+                let todo_id: i64 = row.get(1)?;
+                let content: String = row.get(2)?;
+                let date: Option<String> = row.get(3)?;
+                Ok(SearchHit {
+                    kind: "note".to_string(),
+                    id,
+                    target_todo_id: Some(todo_id),
+                    title: first_line(&content),
+                    snippet: snippet(&content),
+                    date,
+                })
+            })
+            .map_err(|e| e.to_string())?;
+        for r in rows {
+            hits.push(r.map_err(|e| e.to_string())?);
+        }
+    }
+
+    // sub_todos.title
+    {
+        let mut stmt = conn
+            .prepare("SELECT id, todo_id, title, created_at FROM sub_todos WHERE title LIKE ?1 ORDER BY created_at DESC LIMIT ?2")
+            .map_err(|e| e.to_string())?;
+        let rows = stmt
+            .query_map(params![pattern, lim], |row| {
+                let id: i64 = row.get(0)?;
+                let todo_id: i64 = row.get(1)?;
+                let title: String = row.get(2)?;
+                let date: Option<String> = row.get(3)?;
+                Ok(SearchHit {
+                    kind: "subtodo".to_string(),
+                    id,
+                    target_todo_id: Some(todo_id),
+                    title: title.clone(),
+                    snippet: snippet(&title),
+                    date,
+                })
+            })
+            .map_err(|e| e.to_string())?;
+        for r in rows {
+            hits.push(r.map_err(|e| e.to_string())?);
+        }
+    }
+
+    Ok(hits)
 }

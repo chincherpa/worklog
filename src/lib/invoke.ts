@@ -5,6 +5,7 @@ import type {
   FocusSession,
   LogEntry,
   Project,
+  SearchHit,
   SubTodo,
   Tag,
   Todo,
@@ -42,6 +43,8 @@ export const api = {
     invoke<LogEntry[]>('log_get_range', { dbPath, dateFrom, dateTo, tagKey }),
   logSearch: (dbPath: string, query: string, limit?: number) =>
     invoke<LogEntry[]>('log_search', { dbPath, query, limit }),
+  globalSearch: (dbPath: string, query: string, limit?: number) =>
+    invoke<SearchHit[]>('global_search', { dbPath, query, limit }),
 
   // Todo
   todoAdd: (dbPath: string, title: string, context?: string, priority?: string) =>

@@ -95,5 +95,16 @@ export interface WeekSummary {
   day_ratings: string[]
 }
 
+export type SearchHitKind = 'log' | 'todo' | 'note' | 'subtodo'
+
+export interface SearchHit {
+  kind: SearchHitKind
+  id: number
+  target_todo_id: number | null
+  title: string
+  snippet: string
+  date: string | null
+}
+
 export type ActivePanel = 'log' | 'content' | 'todo'
 export type ToastSeverity = 'info' | 'warning' | 'error' | 'success'
