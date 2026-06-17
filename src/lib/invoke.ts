@@ -116,4 +116,7 @@ export const api = {
   // Git
   gitPushDb: (dbPath: string) =>
     invoke<void>('git_push_db', { dbPath }),
+
+  openDbFile: (dbPath: string) =>
+    invoke<void>('open_db_file', { dbPath }),
 }

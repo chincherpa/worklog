@@ -107,6 +107,26 @@ pub fn save_tags(config_path: String, tags: Vec<TagInput>) -> Result<(), String>
 }
 
 #[tauri::command]
+pub fn open_db_file(db_path: String) -> Result<(), String> {
+    #[cfg(target_os = "windows")]
+    std::process::Command::new("cmd")
+        .args(["/C", "start", "", &db_path])
+        .spawn()
+        .map_err(|e| e.to_string())?;
+    #[cfg(target_os = "macos")]
+    std::process::Command::new("open")
+        .arg(&db_path)
+        .spawn()
+        .map_err(|e| e.to_string())?;
+    #[cfg(target_os = "linux")]
+    std::process::Command::new("xdg-open")
+        .arg(&db_path)
+        .spawn()
+        .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
 pub fn save_projects(config_path: String, projects: Vec<ProjectInput>) -> Result<(), String> {
     let current = load_config(Some(config_path.clone()))?;
 

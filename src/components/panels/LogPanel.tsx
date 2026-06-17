@@ -26,6 +26,7 @@ interface Props {
   onFilterChange: (key: string | null) => void
   onInputFocus: (focused: boolean) => void
   onOpenHelp: () => void
+  onOpenDb?: () => void
   focusInputRef: React.MutableRefObject<(() => void) | null>
   style?: React.CSSProperties
 }
@@ -35,7 +36,7 @@ export default function LogPanel({
   tags, tagIdx, onTagChange,
   projects, projectIdx, onProjectChange,
   isActive, inputFocused,
-  onEntrySelect, onLogSubmit, onFilterChange, onInputFocus, onOpenHelp,
+  onEntrySelect, onLogSubmit, onFilterChange, onInputFocus, onOpenHelp, onOpenDb,
   focusInputRef, style,
 }: Props) {
   const inputRef = useRef<HTMLInputElement>(null)
@@ -120,8 +121,28 @@ export default function LogPanel({
         fontSize: 12,
         color: TEXT_SECONDARY,
         flexShrink: 0,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
       }}>
-        📋 LOG · {titleDate} · {todayEntries.length} entries today
+        <span>📋 LOG · {titleDate} · {todayEntries.length} entries today</span>
+        {onOpenDb && (
+          <button
+            onClick={onOpenDb}
+            title="Open database"
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: TEXT_SECONDARY,
+              fontSize: 13,
+              cursor: 'pointer',
+              padding: '0 2px',
+              opacity: 1,
+            }}
+          >
+            🗄 open DB
+          </button>
+        )}
       </div>
 
       {/* Filter bars */}
@@ -192,7 +213,7 @@ export default function LogPanel({
                 outline: 'none',
               }}
             >
-              {projects[projectIdx]?.symbol} {projects[projectIdx]?.key} ▾
+              {projects[projectIdx]?.symbol} {projects[projectIdx]?.name} ▾
             </button>
             {projectDropOpen && (
               <div style={{
@@ -225,7 +246,7 @@ export default function LogPanel({
                       outline: i === projectIdx ? `1px solid ${p.color}` : 'none',
                     }}
                   >
-                    {p.symbol} {p.key}
+                    {p.symbol} {p.name}
                   </div>
                 ))}
               </div>
@@ -249,7 +270,7 @@ export default function LogPanel({
                 outline: 'none',
               }}
             >
-              {tags[tagIdx]?.symbol} {tags[tagIdx]?.key} ▾
+              {tags[tagIdx]?.symbol} {tags[tagIdx]?.name} ▾
             </button>
             {tagDropOpen && (
               <div style={{
@@ -282,7 +303,7 @@ export default function LogPanel({
                       outline: i === tagIdx ? `1px solid ${t.color}` : 'none',
                     }}
                   >
-                    {t.symbol} {t.key}
+                    {t.symbol} {t.name}
                   </div>
                 ))}
               </div>

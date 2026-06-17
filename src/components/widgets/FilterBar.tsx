@@ -3,6 +3,7 @@ import { TEXT_DIM } from '../../theme'
 export interface FilterItem {
   key: string
   symbol: string
+  name: string
   color: string
   bg_color?: string
 }
@@ -65,7 +66,7 @@ export default function FilterBar({ filterKeys, activeFilter, items, onSelect }:
               opacity: active ? 1 : 0.6,
             }}
           >
-            {item ? `${item.symbol} ${k}` : k}
+            {item ? `${item.symbol} ${item.name}` : k}
           </button>
         )
       })}

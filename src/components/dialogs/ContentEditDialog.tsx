@@ -107,6 +107,7 @@ function btn(primary: boolean): React.CSSProperties {
 interface Pillable {
   key: string
   symbol: string
+  name: string
   color: string
   bg_color?: string
 }
@@ -140,7 +141,7 @@ function PillRow<T extends Pillable>({ label, items, currentKey, onSelect }: {
               whiteSpace: 'nowrap',
             }}
           >
-            {item.symbol} {item.key}
+            {item.symbol} {item.name}
           </button>
         ))}
       </div>

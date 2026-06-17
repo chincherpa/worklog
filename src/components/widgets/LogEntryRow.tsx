@@ -52,7 +52,7 @@ export default function LogEntryRow({ entry, tag, project, selected, onClick }: 
           overflow: 'hidden',
           textOverflow: 'ellipsis',
         }}>
-          {project.symbol} {project.key}
+          {project.symbol} {project.name}
         </span>
       )}
       {tag && (
@@ -69,7 +69,7 @@ export default function LogEntryRow({ entry, tag, project, selected, onClick }: 
           overflow: 'hidden',
           textOverflow: 'ellipsis',
         }}>
-          {tag.symbol} {tag.key}
+          {tag.symbol} {tag.name}
         </span>
       )}
       <span style={{

@@ -17,6 +17,7 @@ pub fn run() {
             init_db,
             save_tags,
             save_projects,
+            open_db_file,
             // log
             log_add,
             log_get,

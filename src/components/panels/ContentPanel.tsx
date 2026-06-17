@@ -1,6 +1,7 @@
 import type { CSSProperties } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import remarkBreaks from 'remark-breaks'
 import { BG_PANEL, BORDER_NORMAL, BORDER_ACTIVE, TEXT_DIM, TEXT_PRIMARY, TEXT_SECONDARY } from '../../theme'
 import type { AppConfig, LogEntry } from '../../types'
 
@@ -89,7 +90,7 @@ export default function ContentPanel({ entries, displayedEntryId, config, isActi
             {body && (
               <div style={{ color: TEXT_PRIMARY, fontSize: 13, lineHeight: 1.6 }}>
                 <ReactMarkdown
-                  remarkPlugins={[remarkGfm]}
+                  remarkPlugins={[remarkGfm, remarkBreaks]}
                   components={{
                     p: ({ children }) => <p style={{ marginBottom: 8 }}>{children}</p>,
                     code: ({ children }) => (

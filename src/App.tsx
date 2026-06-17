@@ -525,6 +525,7 @@ export default function App() {
         onProjectFilterChange={app.setProjectFilter}
         onInputFocus={app.setInputFocused}
         onOpenHelp={() => openDialog({ type: 'help' })}
+        onOpenDb={app.dbPath ? () => api.openDbFile(app.dbPath!) : undefined}
         focusInputRef={focusInputRef}
         style={{ flex: panelWidths.log }}
       />
