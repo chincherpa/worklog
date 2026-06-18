@@ -3576,6 +3576,7 @@ version = "0.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "185d8ab0dfbb35cf1399a6344d8484209c088f75f8f68230da55d48d95d43e3d"
 dependencies = [
+ "indexmap 2.14.0",
  "serde",
  "serde_spanned 0.6.9",
  "toml_datetime 0.6.3",
@@ -4742,10 +4743,11 @@ dependencies = [
 
 [[package]]
 name = "worklog"
-version = "0.1.17"
+version = "0.1.20"
 dependencies = [
  "chrono",
  "dirs-next",
+ "indexmap 2.14.0",
  "rusqlite",
  "serde",
  "serde_json",

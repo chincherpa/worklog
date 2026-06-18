@@ -1,6 +1,6 @@
 use crate::app_config::{load_config, AppConfig};
+use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 
 #[derive(Debug, Deserialize)]
 pub struct KeybindingInput {
@@ -38,10 +38,10 @@ struct EntryOut {
 #[derive(Serialize)]
 struct ConfigOut {
     db_path: String,
-    tags: HashMap<String, EntryOut>,
-    projects: HashMap<String, EntryOut>,
-    #[serde(skip_serializing_if = "HashMap::is_empty")]
-    keybindings: HashMap<String, Vec<String>>,
+    tags: IndexMap<String, EntryOut>,
+    projects: IndexMap<String, EntryOut>,
+    #[serde(skip_serializing_if = "IndexMap::is_empty")]
+    keybindings: IndexMap<String, Vec<String>>,
 }
 
 #[tauri::command]
@@ -60,7 +60,7 @@ pub fn init_db(db_path: String) -> Result<i64, String> {
     crate::db::migrate(&db_path)
 }
 
-fn tags_to_map(tags: &[crate::app_config::Tag]) -> HashMap<String, EntryOut> {
+fn tags_to_map(tags: &[crate::app_config::Tag]) -> IndexMap<String, EntryOut> {
     tags.iter().map(|t| (t.key.clone(), EntryOut {
         symbol: t.symbol.clone(),
         name: t.name.clone(),
@@ -69,7 +69,7 @@ fn tags_to_map(tags: &[crate::app_config::Tag]) -> HashMap<String, EntryOut> {
     })).collect()
 }
 
-fn projects_to_map(projects: &[crate::app_config::Project]) -> HashMap<String, EntryOut> {
+fn projects_to_map(projects: &[crate::app_config::Project]) -> IndexMap<String, EntryOut> {
     projects.iter().map(|p| (p.key.clone(), EntryOut {
         symbol: p.symbol.clone(),
         name: p.name.clone(),
@@ -78,7 +78,7 @@ fn projects_to_map(projects: &[crate::app_config::Project]) -> HashMap<String, E
     })).collect()
 }
 
-fn keybindings_to_map(keybindings: &[crate::app_config::Keybinding]) -> HashMap<String, Vec<String>> {
+fn keybindings_to_map(keybindings: &[crate::app_config::Keybinding]) -> IndexMap<String, Vec<String>> {
     keybindings.iter()
         .filter(|kb| !kb.keys.is_empty())
         .map(|kb| (kb.action.clone(), kb.keys.clone()))
@@ -88,9 +88,9 @@ fn keybindings_to_map(keybindings: &[crate::app_config::Keybinding]) -> HashMap<
 fn write_config(
     config_path: &str,
     db_path: String,
-    tags: HashMap<String, EntryOut>,
-    projects: HashMap<String, EntryOut>,
-    keybindings: HashMap<String, Vec<String>>,
+    tags: IndexMap<String, EntryOut>,
+    projects: IndexMap<String, EntryOut>,
+    keybindings: IndexMap<String, Vec<String>>,
 ) -> Result<(), String> {
     let config_out = ConfigOut { db_path, tags, projects, keybindings };
 
@@ -107,7 +107,7 @@ fn write_config(
 pub fn save_tags(config_path: String, tags: Vec<TagInput>) -> Result<(), String> {
     let current = load_config(Some(config_path.clone()))?;
 
-    let mut tags_map: HashMap<String, EntryOut> = HashMap::new();
+    let mut tags_map: IndexMap<String, EntryOut> = IndexMap::new();
     for tag in tags {
         tags_map.insert(tag.key, EntryOut {
             symbol: tag.symbol,
@@ -149,7 +149,7 @@ pub fn save_projects(config_path: String, projects: Vec<ProjectInput>) -> Result
 
     let tags_map = tags_to_map(&current.tags);
 
-    let mut projects_map: HashMap<String, EntryOut> = HashMap::new();
+    let mut projects_map: IndexMap<String, EntryOut> = IndexMap::new();
     for project in projects {
         projects_map.insert(project.key, EntryOut {
             symbol: project.symbol,
@@ -171,7 +171,7 @@ pub fn save_keybindings(config_path: String, keybindings: Vec<KeybindingInput>) 
     let tags_map = tags_to_map(&current.tags);
     let projects_map = projects_to_map(&current.projects);
 
-    let mut keybindings_map: HashMap<String, Vec<String>> = HashMap::new();
+    let mut keybindings_map: IndexMap<String, Vec<String>> = IndexMap::new();
     for kb in keybindings {
         if !kb.keys.is_empty() {
             keybindings_map.insert(kb.action, kb.keys);

@@ -20,6 +20,7 @@ import TodoDetailDialog from './components/dialogs/TodoDetailDialog'
 import WeeklyReviewDialog from './components/dialogs/WeeklyReviewDialog'
 import KeybindingsHelpDialog from './components/dialogs/KeybindingsHelpDialog'
 import ConfigDialog from './components/dialogs/ConfigDialog'
+import GanttDialog from './components/dialogs/GanttDialog'
 import Toast, { useToast } from './components/widgets/Toast'
 import type { NewTodoResult } from './components/dialogs/NewTodoDialog'
 import type { FocusOutcome, FocusResult } from './components/dialogs/FocusDialog'
@@ -29,7 +30,7 @@ import type { Tag, Project, SearchHit, Keybinding } from './types'
 type DialogType =
   | 'none' | 'confirm' | 'newTodo' | 'contentEdit'
   | 'tagSelect' | 'focus' | 'debrief' | 'todoDetail'
-  | 'weekly' | 'help' | 'config'
+  | 'weekly' | 'help' | 'config' | 'gantt'
 
 interface DialogData {
   type: DialogType
@@ -215,11 +216,11 @@ export default function App() {
         app.setTodoVisible(!app.todoVisible)
         break
 
-      case 'nextFilter':
+      case 'nextTagFilter':
         app.cycleFilter(1)
         break
 
-      case 'prevFilter':
+      case 'prevTagFilter':
         app.cycleFilter(-1)
         break
 
@@ -380,6 +381,10 @@ export default function App() {
 
       case 'openConfig':
         openDialog({ type: 'config' })
+        break
+
+      case 'openGantt':
+        openDialog({ type: 'gantt' })
         break
 
       case 'focusSearch':
@@ -724,6 +729,14 @@ export default function App() {
       <KeybindingsHelpDialog
         open={dialog.type === 'help'}
         onClose={closeDialog}
+      />
+
+      <GanttDialog
+        open={dialog.type === 'gantt'}
+        todos={app.todos}
+        dbPath={app.dbPath}
+        onClose={closeDialog}
+        onTodoChange={() => app.loadTodos()}
       />
 
       <ConfigDialog

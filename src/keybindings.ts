@@ -21,8 +21,8 @@ export type ActionName =
   | 'todoMoveDown'
   | 'cyclePanel'
   | 'cyclePanelBack'
-  | 'nextFilter'
-  | 'prevFilter'
+  | 'nextTagFilter'
+  | 'prevTagFilter'
   | 'nextProjectFilter'
   | 'prevProjectFilter'
   | 'prevTag'
@@ -30,6 +30,7 @@ export type ActionName =
   | 'cycleProject'
   | 'openHelp'
   | 'openConfig'
+  | 'openGantt'
   | 'focusSearch'
 
 /** Build the canonical key string for a keyboard event (e.g. "Shift+D", "Control+f"). */
@@ -65,8 +66,8 @@ export const ACTION_LABELS: Record<ActionName, string> = {
   todoMoveDown: 'Move todo down',
   cyclePanel: 'Next panel',
   cyclePanelBack: 'Previous panel',
-  nextFilter: 'Next filter',
-  prevFilter: 'Previous filter',
+  nextTagFilter: 'Next tag filter',
+  prevTagFilter: 'Previous tag filter',
   nextProjectFilter: 'Next project filter',
   prevProjectFilter: 'Previous project filter',
   prevTag: 'Previous tag (input)',
@@ -74,6 +75,7 @@ export const ACTION_LABELS: Record<ActionName, string> = {
   cycleProject: 'Cycle active project',
   openHelp: 'Show this help',
   openConfig: 'Manage config (tags / projects / keys)',
+  openGantt: 'Zeitplan (Gantt)',
   focusSearch: 'Focus search',
 }
 
@@ -95,8 +97,7 @@ export const DEFAULT_BINDINGS: Record<string, ActionName> = {
   ArrowUp: 'arrowUp',
   'Shift+ArrowUp': 'todoMoveUp',
   'Shift+ArrowDown': 'todoMoveDown',
-  b: 'prevFilter',
-  B: 'prevFilter',
+  'Shift+J': 'prevTagFilter',
   c: 'changeTag',
   C: 'changeTag',
   d: 'todoDone',
@@ -112,8 +113,7 @@ export const DEFAULT_BINDINGS: Record<string, ActionName> = {
   L: 'focusLogInput',
   m: 'toggleContent',
   M: 'toggleContent',
-  n: 'nextFilter',
-  N: 'nextFilter',
+  j: 'nextTagFilter',
   o: 'cycleProject',
   O: 'cycleProject',
   p: 'prevTag',
@@ -131,6 +131,8 @@ export const DEFAULT_BINDINGS: Record<string, ActionName> = {
   W: 'openWeekly',
   x: 'cancelTodo',
   X: 'cancelTodo',
+  z: 'openGantt',
+  Z: 'openGantt',
 }
 
 /** Active runtime bindings (key→action). Replaced via setBindings() once config loads. */

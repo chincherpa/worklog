@@ -118,9 +118,30 @@ export default function TodoDetailDialog({ open, todo, dbPath, onClose, onSubtod
               Datum
               <input type="date" value={schedDate} onChange={e => setSchedDate(e.target.value)} style={inputStyle} />
             </label>
-            <label style={{ width: 90, fontSize: 10, color: TEXT_DIM }}>
+            <label style={{ width: 110, fontSize: 10, color: TEXT_DIM }}>
               Uhrzeit
-              <input type="time" value={schedTime} onChange={e => setSchedTime(e.target.value)} style={inputStyle} />
+              <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                <select
+                  value={schedTime ? schedTime.slice(0, 2) : ''}
+                  onChange={e => setSchedTime(`${e.target.value}:${schedTime ? schedTime.slice(3, 5) : '00'}`)}
+                  style={selectStyle}
+                >
+                  <option value="" style={optionStyle}>--</option>
+                  {Array.from({ length: 24 }, (_, h) => String(h).padStart(2, '0')).map(h => (
+                    <option key={h} value={h} style={optionStyle}>{h}</option>
+                  ))}
+                </select>
+                <span style={{ color: TEXT_DIM }}>:</span>
+                <select
+                  value={schedTime ? schedTime.slice(3, 5) : '00'}
+                  onChange={e => setSchedTime(`${schedTime ? schedTime.slice(0, 2) : '00'}:${e.target.value}`)}
+                  style={selectStyle}
+                >
+                  {['00', '15', '30', '45'].map(m => (
+                    <option key={m} value={m} style={optionStyle}>{m}</option>
+                  ))}
+                </select>
+              </div>
             </label>
             <label style={{ width: 90, fontSize: 10, color: TEXT_DIM }}>
               Dauer (h)
@@ -208,6 +229,20 @@ export default function TodoDetailDialog({ open, todo, dbPath, onClose, onSubtod
     </Overlay>
   )
 }
+
+const selectStyle: React.CSSProperties = {
+  flex: 1,
+  padding: '4px 2px',
+  fontSize: 12,
+  background: BG_PANEL,
+  color: '#E8E8E8',
+  outline: 'none',
+  fontFamily: 'inherit',
+  border: 'none',
+  borderBottom: `1px solid #2A3340`,
+}
+
+const optionStyle: React.CSSProperties = { background: BG_PANEL, color: '#E8E8E8' }
 
 const inputStyle: React.CSSProperties = {
   width: '100%',

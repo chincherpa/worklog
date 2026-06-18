@@ -82,3 +82,14 @@ export function formatEstDuration(min: number): string {
 export function isOverdue(scheduledAt: string): boolean {
   return new Date(scheduledAt.replace(' ', 'T')).getTime() < Date.now()
 }
+
+// Parse a scheduled string "YYYY-MM-DD HH:MM:SS" into a local Date.
+export function parseScheduled(s: string): Date {
+  return new Date(s.replace(' ', 'T'))
+}
+
+// Date -> "YYYY-MM-DD HH:MM:SS" using local components (counterpart to parseScheduled).
+export function toScheduledString(d: Date): string {
+  const p = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`
+}
