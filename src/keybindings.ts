@@ -3,6 +3,7 @@ export type ActionName =
   | 'addTodo'
   | 'todoDone'
   | 'deleteEntry'
+  | 'deleteSelected'
   | 'cancelTodo'
   | 'startFocus'
   | 'editEntry'
@@ -48,6 +49,7 @@ export const ACTION_LABELS: Record<ActionName, string> = {
   addTodo: 'New todo',
   todoDone: 'Mark todo done',
   deleteEntry: 'Delete log entry',
+  deleteSelected: 'Delete selected (log entry / todo)',
   cancelTodo: 'Cancel todo (confirm)',
   startFocus: 'Start / Stop focus session',
   editEntry: 'Edit entry',
@@ -87,6 +89,7 @@ export const DEFAULT_BINDINGS: Record<string, ActionName> = {
   'Control+f': 'focusSearch',
   'Control+F': 'focusSearch',
   '?': 'openHelp',
+  Delete: 'deleteSelected',
   'Shift+D': 'deleteEntry',
   'Shift+I': 'prevProjectFilter',
   'Shift+O': 'nextTag',

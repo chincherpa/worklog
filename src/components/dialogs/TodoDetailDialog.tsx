@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { BG_PANEL, BORDER_NORMAL, TEXT_DIM, TEXT_PRIMARY, TEXT_SECONDARY, ACCENT_GREEN } from '../../theme'
 import { Overlay } from './ConfirmDialog'
 import { api } from '../../lib/invoke'
@@ -21,6 +21,13 @@ export default function TodoDetailDialog({ open, todo, dbPath, onClose, onSubtod
   const [schedDate, setSchedDate] = useState('')
   const [schedTime, setSchedTime] = useState('')
   const [durationH, setDurationH] = useState('')
+  const subInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    // Focus sub-todo input when dialog opens
+    requestAnimationFrame(() => subInputRef.current?.focus())
+  }, [open])
 
   useEffect(() => {
     if (!open || !todo) return
@@ -177,6 +184,7 @@ export default function TodoDetailDialog({ open, todo, dbPath, onClose, onSubtod
           ))}
           <form onSubmit={handleAddSub} style={{ marginTop: 4 }}>
             <input
+              ref={subInputRef}
               value={subInput}
               onChange={e => setSubInput(e.target.value)}
               placeholder="Add sub-todo…"

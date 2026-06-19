@@ -327,6 +327,37 @@ export default function App() {
         break
       }
 
+      case 'deleteSelected': {
+        if (app.activePanel === 'todo') {
+          const todo = todos[todoIdx]
+          if (!todo) break
+          openDialog({
+            type: 'confirm',
+            confirmMessage: `Cancel todo: "${todo.title.slice(0, 40)}"?`,
+            onConfirm: async () => {
+              await api.todoSetStatus(dbPath, todo.id, 'cancelled')
+              await app.loadTodos()
+              closeDialog()
+              showToast('Todo cancelled', 'warning')
+            },
+          })
+        } else {
+          const entry = logEntries.find(e => e.id === displayedEntryId)
+          if (!entry) break
+          openDialog({
+            type: 'confirm',
+            confirmMessage: `Delete entry: "${entry.content.slice(0, 40)}"?`,
+            onConfirm: async () => {
+              await api.logDelete(dbPath, entry.id)
+              await app.loadLog()
+              closeDialog()
+              showToast('Entry deleted', 'warning')
+            },
+          })
+        }
+        break
+      }
+
       case 'editEntry': {
         const entry = logEntries.find(e => e.id === displayedEntryId)
         if (entry) openDialog({ type: 'contentEdit' })
