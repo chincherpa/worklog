@@ -1,4 +1,4 @@
-import type { CSSProperties } from 'react'
+import { useState, useRef, useEffect, type CSSProperties } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import remarkBreaks from 'remark-breaks'
@@ -10,10 +10,11 @@ interface Props {
   displayedEntryId: number | null
   config: AppConfig | null
   isActive: boolean
+  onSaveContent?: (content: string) => void
   style?: CSSProperties
 }
 
-export default function ContentPanel({ entries, displayedEntryId, config, isActive, style }: Props) {
+export default function ContentPanel({ entries, displayedEntryId, config, isActive, onSaveContent, style }: Props) {
   const tags = config?.tags ?? []
   const tagMap = new Map(tags.map(t => [t.key, t]))
   const projects = config?.projects ?? []
@@ -25,6 +26,44 @@ export default function ContentPanel({ entries, displayedEntryId, config, isActi
   const lines = entry?.content.split('\n') ?? []
   const heading = lines[0] ?? ''
   const body = lines.slice(1).join('\n').trim()
+
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState('')
+  const cancelRef = useRef(false)
+  const taRef = useRef<HTMLTextAreaElement>(null)
+
+  // Reset edit mode when the displayed entry changes
+  useEffect(() => {
+    setEditing(false)
+  }, [displayedEntryId])
+
+  function startEdit() {
+    if (!entry || !onSaveContent) return
+    cancelRef.current = false
+    setDraft(entry.content)
+    setEditing(true)
+    setTimeout(() => {
+      const ta = taRef.current
+      if (!ta) return
+      ta.focus()
+      ta.setSelectionRange(ta.value.length, ta.value.length)
+    }, 0)
+  }
+
+  function commit() {
+    setEditing(false)
+    if (cancelRef.current) { cancelRef.current = false; return }
+    if (entry && onSaveContent && draft !== entry.content) onSaveContent(draft)
+  }
+
+  function onTextareaKeyDown(e: React.KeyboardEvent) {
+    if (e.key === 'Escape') {
+      e.preventDefault()
+      e.stopPropagation()
+      cancelRef.current = true
+      taRef.current?.blur()
+    }
+  }
 
   return (
     <div style={{
@@ -70,9 +109,33 @@ export default function ContentPanel({ entries, displayedEntryId, config, isActi
         flex: 1,
         overflowY: 'auto',
         padding: '12px 16px',
+        display: editing ? 'flex' : undefined,
       }}>
-        {entry ? (
-          <>
+        {editing ? (
+          <textarea
+            ref={taRef}
+            value={draft}
+            onChange={e => setDraft(e.target.value)}
+            onBlur={commit}
+            onKeyDown={onTextareaKeyDown}
+            style={{
+              flex: 1,
+              width: '100%',
+              resize: 'none',
+              border: 'none',
+              outline: 'none',
+              background: 'transparent',
+              color: TEXT_PRIMARY,
+              fontSize: 13,
+              lineHeight: 1.6,
+              fontFamily: 'inherit',
+            }}
+          />
+        ) : entry ? (
+          <div
+            onClick={onSaveContent ? startEdit : undefined}
+            style={{ cursor: onSaveContent ? 'text' : undefined, minHeight: '100%' }}
+          >
             {heading && (
               <h3 style={{
                 color: TEXT_PRIMARY,
@@ -122,7 +185,7 @@ export default function ContentPanel({ entries, displayedEntryId, config, isActi
                 </ReactMarkdown>
               </div>
             )}
-          </>
+          </div>
         ) : (
           <div style={{ color: TEXT_DIM, fontSize: 11, textAlign: 'center', marginTop: 32 }}>
             No entry selected

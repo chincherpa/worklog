@@ -466,6 +466,12 @@ export default function App() {
     await app.loadLog()
   }, [app, closeDialog])
 
+  const handleInlineContentSave = useCallback(async (content: string) => {
+    if (!app.dbPath || !app.displayedEntryId) return
+    await api.logUpdate(app.dbPath, app.displayedEntryId, content)
+    await app.loadLog()
+  }, [app])
+
   const handleTagSelect = useCallback(async (key: string | null) => {
     closeDialog()
     if (!key || !app.dbPath || !app.displayedEntryId) return
@@ -656,6 +662,7 @@ export default function App() {
               displayedEntryId={app.displayedEntryId}
               config={app.config}
               isActive={app.activePanel === 'content'}
+              onSaveContent={handleInlineContentSave}
               style={{ flex: 1, minHeight: 0 }}
             />
           </div>
