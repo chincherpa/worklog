@@ -694,6 +694,7 @@ export default function App() {
             app.setTodoIdx(idx)
             app.setActivePanel('todo')
           }}
+          onLogAdded={() => app.loadLog()}
           subtodosRevision={subtodosRevision}
           style={{ flex: panelWidths.todo }}
         />

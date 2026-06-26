@@ -21,6 +21,7 @@ interface Props {
   isActive: boolean
   logEntries: LogEntry[]
   onTodoSelect: (idx: number) => void
+  onLogAdded?: () => void
   subtodosRevision?: number
   style?: CSSProperties
 }
@@ -36,7 +37,7 @@ const DONE_STATUSES = new Set(['done', 'cancelled', 'dropped'])
 
 export default function TodoPanel({
   todos, todoIdx, activeSession, sessionPause, onSessionPauseToggle, onSessionStop,
-  dbPath, isActive, logEntries, onTodoSelect, subtodosRevision, style,
+  dbPath, isActive, logEntries, onTodoSelect, onLogAdded, subtodosRevision, style,
 }: Props) {
   const [expanded, setExpanded] = useState<ExpandedData | null>(null)
   const [collapsedId, setCollapsedId] = useState<number | null>(null)
@@ -78,6 +79,11 @@ export default function TodoPanel({
       ...prev,
       subTodos: prev.subTodos.map(s => s.id === subId ? updated : s),
     })
+    // Log to journal only when a subtodo just became done.
+    if (updated.done && selectedTodo) {
+      await api.logAdd(dbPath, 'done', `${selectedTodo.title}: ${updated.title}`, undefined, selectedTodo.id)
+      onLogAdded?.()
+    }
   }
 
   const activeSessionTitle = activeSession
