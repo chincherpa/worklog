@@ -72,6 +72,14 @@ export default function TodoPanel({
     }).catch(console.error)
   }, [selectedTodo?.id, dbPath, logEntries, subtodosRevision])
 
+  const handleToggleSub = async (subId: number) => {
+    const updated = await api.subtodoToggle(dbPath, subId)
+    setExpanded(prev => prev && {
+      ...prev,
+      subTodos: prev.subTodos.map(s => s.id === subId ? updated : s),
+    })
+  }
+
   const activeSessionTitle = activeSession
     ? todos.find(t => t.id === activeSession.todo_id)?.title?.slice(0, 30) ?? ''
     : ''
@@ -124,7 +132,7 @@ export default function TodoPanel({
                 onClick={() => handleRowClick(globalIdx, todo.id)}
               />
               {globalIdx === todoIdx && expanded?.todoId === todo.id && collapsedId !== todo.id && (
-                <ExpandedSection expanded={expanded} />
+                <ExpandedSection expanded={expanded} onToggleSub={handleToggleSub} />
               )}
             </div>
           )
@@ -155,7 +163,7 @@ export default function TodoPanel({
                     onClick={() => handleRowClick(globalIdx, todo.id)}
                   />
                   {globalIdx === todoIdx && expanded?.todoId === todo.id && collapsedId !== todo.id && (
-                    <ExpandedSection expanded={expanded} />
+                    <ExpandedSection expanded={expanded} onToggleSub={handleToggleSub} />
                   )}
                 </div>
               )
@@ -173,7 +181,7 @@ export default function TodoPanel({
   )
 }
 
-function ExpandedSection({ expanded }: { expanded: ExpandedData }) {
+function ExpandedSection({ expanded, onToggleSub }: { expanded: ExpandedData; onToggleSub: (subId: number) => void }) {
   const { subTodos, notes, linkedLogs } = expanded
   const [hoveredNote, setHoveredNote] = useState<number | null>(null)
   const [copiedNote, setCopiedNote] = useState<number | null>(null)
@@ -212,11 +220,15 @@ function ExpandedSection({ expanded }: { expanded: ExpandedData }) {
       {subTodos.length > 0 && (
         <div style={{ marginBottom: 4 }}>
           {subTodos.map(s => (
-            <div key={s.id} style={{
-              color: s.done ? '#555577' : '#C8C8C8',
-              textDecoration: s.done ? 'line-through' : 'none',
-              marginBottom: 2,
-            }}>
+            <div
+              key={s.id}
+              onClick={(e) => { e.stopPropagation(); onToggleSub(s.id) }}
+              style={{
+                color: s.done ? '#555577' : '#C8C8C8',
+                textDecoration: s.done ? 'line-through' : 'none',
+                marginBottom: 2,
+                cursor: 'pointer',
+              }}>
               {s.done ? '✓' : '○'} {s.title}
             </div>
           ))}
