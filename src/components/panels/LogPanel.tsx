@@ -27,6 +27,7 @@ interface Props {
   onInputFocus: (focused: boolean) => void
   onOpenHelp: () => void
   onOpenDb?: () => void
+  onPushDb?: () => void
   focusInputRef: React.MutableRefObject<(() => void) | null>
   style?: React.CSSProperties
 }
@@ -36,7 +37,7 @@ export default function LogPanel({
   tags, tagIdx, onTagChange,
   projects, projectIdx, onProjectChange,
   isActive, inputFocused,
-  onEntrySelect, onLogSubmit, onFilterChange, onInputFocus, onOpenHelp, onOpenDb,
+  onEntrySelect, onLogSubmit, onFilterChange, onInputFocus, onOpenHelp, onOpenDb, onPushDb,
   focusInputRef, style,
 }: Props) {
   const inputRef = useRef<HTMLInputElement>(null)
@@ -126,23 +127,42 @@ export default function LogPanel({
         justifyContent: 'space-between',
       }}>
         <span>📋 LOG · {titleDate} · {todayEntries.length} entries today</span>
-        {onOpenDb && (
-          <button
-            onClick={onOpenDb}
-            title="Open database"
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: TEXT_SECONDARY,
-              fontSize: 13,
-              cursor: 'pointer',
-              padding: '0 2px',
-              opacity: 1,
-            }}
-          >
-            🗄 open DB
-          </button>
-        )}
+        <div style={{ display: 'flex', gap: 8 }}>
+          {onOpenDb && (
+            <button
+              onClick={onOpenDb}
+              title="Open database"
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: TEXT_SECONDARY,
+                fontSize: 13,
+                cursor: 'pointer',
+                padding: '0 2px',
+                opacity: 1,
+              }}
+            >
+              🗄 open DB
+            </button>
+          )}
+          {onPushDb && (
+            <button
+              onClick={onPushDb}
+              title="Commit & push database to git remote"
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: TEXT_SECONDARY,
+                fontSize: 13,
+                cursor: 'pointer',
+                padding: '0 2px',
+                opacity: 1,
+              }}
+            >
+              ⬆ push DB
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Filter bars */}

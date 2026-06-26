@@ -638,6 +638,7 @@ export default function App() {
         onInputFocus={app.setInputFocused}
         onOpenHelp={() => openDialog({ type: 'help' })}
         onOpenDb={app.dbPath ? () => api.openDbFile(app.dbPath!) : undefined}
+        onPushDb={app.dbPath ? () => api.gitPushDb(app.dbPath!) : undefined}
         focusInputRef={focusInputRef}
         style={{ flex: panelWidths.log }}
       />
