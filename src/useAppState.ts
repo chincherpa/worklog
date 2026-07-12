@@ -119,8 +119,10 @@ export function useAppState(): AppState & AppActions {
 
       setState(prev => {
         let displayedEntryId = prev.displayedEntryId
-        if (!displayedEntryId && entries.length > 0) {
-          displayedEntryId = entries[0].id
+        // Fall back to the newest entry if nothing is selected or the previously
+        // displayed entry no longer exists (e.g. it was just deleted).
+        if (!displayedEntryId || !entries.some(e => e.id === displayedEntryId)) {
+          displayedEntryId = entries[0]?.id ?? null
         }
         return {
           ...prev,
@@ -151,7 +153,10 @@ export function useAppState(): AppState & AppActions {
         logEntries: entries,
         filterKeys: usedTags,
         projectFilterKeys: usedProjects,
-        displayedEntryId: prev.displayedEntryId ?? (entries[0]?.id ?? null),
+        displayedEntryId:
+          prev.displayedEntryId && entries.some(e => e.id === prev.displayedEntryId)
+            ? prev.displayedEntryId
+            : (entries[0]?.id ?? null),
       }))
     } catch (e) {
       setState(prev => ({ ...prev, error: String(e) }))

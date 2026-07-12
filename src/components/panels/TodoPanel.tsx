@@ -79,10 +79,15 @@ export default function TodoPanel({
       ...prev,
       subTodos: prev.subTodos.map(s => s.id === subId ? updated : s),
     })
-    // Log to journal only when a subtodo just became done.
+    // Log to journal only when a subtodo just became done — and only once, so
+    // toggling it off and on again doesn't create a duplicate entry.
     if (updated.done && selectedTodo) {
-      await api.logAdd(dbPath, 'done', `${selectedTodo.title}: ${updated.title}`, undefined, selectedTodo.id)
-      onLogAdded?.()
+      const content = `${selectedTodo.title}: ${updated.title}`
+      const alreadyLogged = logEntries.some(e => e.todo_id === selectedTodo.id && e.content === content)
+      if (!alreadyLogged) {
+        await api.logAdd(dbPath, 'done', content, undefined, selectedTodo.id)
+        onLogAdded?.()
+      }
     }
   }
 

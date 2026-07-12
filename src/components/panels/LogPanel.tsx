@@ -3,6 +3,7 @@ import { BG_PANEL, BORDER_NORMAL, BORDER_ACTIVE, TEXT_DIM, TEXT_SECONDARY } from
 import LogEntryRow from '../widgets/LogEntryRow'
 import DateSeparator from '../widgets/DateSeparator'
 import FilterBar from '../widgets/FilterBar'
+import { todayLocal } from '../../lib/format'
 import type { LogEntry, Project, Tag } from '../../types'
 
 interface Props {
@@ -44,7 +45,7 @@ export default function LogPanel({
   const tagMap = new Map(tags.map(t => [t.key, t]))
   const projectMap = new Map(projects.map(p => [p.key, p]))
 
-  const today = new Date().toISOString().slice(0, 10)
+  const today = todayLocal()
   const todayEntries = logEntries.filter(e => e.date === today)
 
   const filtered = logEntries.filter(e =>

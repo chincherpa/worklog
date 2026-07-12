@@ -23,6 +23,18 @@ pub fn session_start(
     timer_preset: Option<String>,
 ) -> Result<FocusSession, String> {
     let conn = get_connection(&db_path).map_err(|e| e.to_string())?;
+    // Guard the single-active-session constraint with a friendly message instead
+    // of leaking the raw partial-unique-index error to the UI.
+    let open: i64 = conn
+        .query_row(
+            "SELECT COUNT(*) FROM focus_sessions WHERE ended_at IS NULL",
+            [],
+            |row| row.get(0),
+        )
+        .map_err(|e| e.to_string())?;
+    if open > 0 {
+        return Err("Es läuft bereits eine Fokus-Session.".to_string());
+    }
     let session_id: i64 = conn
         .query_row(
             "INSERT INTO focus_sessions (todo_id, timer_preset) VALUES (?1, ?2) RETURNING id",
@@ -44,6 +56,7 @@ pub fn session_end(
     session_id: i64,
     outcome: String,
     log_entry: Option<String>,
+    elapsed_s: Option<i64>,
 ) -> Result<FocusSession, String> {
     let conn = get_connection(&db_path).map_err(|e| e.to_string())?;
     let ended_at = now_str();
@@ -57,12 +70,19 @@ pub fn session_end(
         )
         .map_err(|e| format!("Session {session_id} not found: {e}"))?;
 
-    let fmt = "%Y-%m-%d %H:%M:%S";
-    let started = NaiveDateTime::parse_from_str(&started_at, fmt)
-        .map_err(|e| format!("Parse started_at: {e}"))?;
-    let ended = NaiveDateTime::parse_from_str(&ended_at, fmt)
-        .map_err(|e| format!("Parse ended_at: {e}"))?;
-    let duration_s = (ended - started).num_seconds();
+    // Prefer the client-reported elapsed time, which excludes paused spans.
+    // Fall back to wall-clock (ended − started) when it isn't provided.
+    let duration_s = match elapsed_s {
+        Some(s) if s > 0 => s,
+        _ => {
+            let fmt = "%Y-%m-%d %H:%M:%S";
+            let started = NaiveDateTime::parse_from_str(&started_at, fmt)
+                .map_err(|e| format!("Parse started_at: {e}"))?;
+            let ended = NaiveDateTime::parse_from_str(&ended_at, fmt)
+                .map_err(|e| format!("Parse ended_at: {e}"))?;
+            (ended - started).num_seconds()
+        }
+    };
 
     conn.execute(
         "UPDATE focus_sessions SET ended_at = ?1, duration_s = ?2, outcome = ?3, log_entry = ?4 WHERE id = ?5",

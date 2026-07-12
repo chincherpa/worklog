@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { BG_PANEL, BORDER_NORMAL, TEXT_DIM, TEXT_PRIMARY, TEXT_SECONDARY, ACCENT_BLUE } from '../../theme'
 import { Overlay } from './ConfirmDialog'
 import { api } from '../../lib/invoke'
-import { formatDuration, isoWeek } from '../../lib/format'
+import { formatDuration, isoWeek, isoWeeksInYear, isoWeekToDateRange } from '../../lib/format'
 import type { Todo, WeekSummary } from '../../types'
 
 interface Props {
@@ -37,13 +37,20 @@ export default function WeeklyReviewDialog({ open, dbPath, todos, onClose }: Pro
 
   const navWeek = (dir: 1 | -1) => {
     const y = parseInt(yearStr)
-    let w = weekNum + dir
-    if (w < 1) { setWeek(`${y - 1}-W52`); return }
-    if (w > 52) { setWeek(`${y + 1}-W01`); return }
+    const w = weekNum + dir
+    if (w < 1) { setWeek(`${y - 1}-W${String(isoWeeksInYear(y - 1)).padStart(2, '0')}`); return }
+    if (w > isoWeeksInYear(y)) { setWeek(`${y + 1}-W01`); return }
     setWeek(`${y}-W${String(w).padStart(2, '0')}`)
   }
 
-  const doneTodos = todos.filter(t => t.status === 'done')
+  // Only todos completed within the displayed week (done_at is "YYYY-MM-DD …").
+  const range = isoWeekToDateRange(week)
+  const doneTodos = todos.filter(t => {
+    if (t.status !== 'done' || !t.done_at) return false
+    if (!range) return true
+    const day = t.done_at.slice(0, 10)
+    return day >= range.from && day <= range.to
+  })
 
   return (
     <Overlay>

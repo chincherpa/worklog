@@ -2,6 +2,12 @@ use crate::db::{get_connection, today};
 use crate::models::{LogEntry, SearchHit};
 use rusqlite::params;
 
+/// Escape the LIKE wildcards `%` and `_` (and the escape char itself) so user
+/// input is matched literally. Pair with `ESCAPE '\'` in the query.
+pub fn escape_like(s: &str) -> String {
+    s.replace('\\', "\\\\").replace('%', "\\%").replace('_', "\\_")
+}
+
 fn row_to_log(row: &rusqlite::Row) -> rusqlite::Result<LogEntry> {
     Ok(LogEntry {
         id: row.get("id")?,
@@ -62,29 +68,24 @@ pub fn log_update(
 ) -> Result<LogEntry, String> {
     let conn = get_connection(&db_path).map_err(|e| e.to_string())?;
     let mut parts: Vec<String> = Vec::new();
-    if let Some(ref c) = content {
-        let _ = c;
+    if content.is_some() {
         parts.push("content = ?".to_string());
     }
-    if let Some(ref t) = tag_key {
-        let _ = t;
+    if tag_key.is_some() {
         parts.push("tag_key = ?".to_string());
     }
-    if let Some(r) = resolved {
-        let _ = r;
+    if resolved.is_some() {
         parts.push("resolved = ?".to_string());
     }
-    if let Some(ref p) = project_key {
-        let _ = p;
+    if project_key.is_some() {
         parts.push("project = ?".to_string());
     }
     if !parts.is_empty() {
+        // The id is bound as the final parameter (never interpolated).
         let sql = format!(
-            "UPDATE log_entries SET {} WHERE id = {}",
-            parts.join(", "),
-            entry_id
+            "UPDATE log_entries SET {} WHERE id = ?",
+            parts.join(", ")
         );
-        // Build params dynamically
         let mut stmt = conn.prepare(&sql).map_err(|e| e.to_string())?;
         let mut idx = 1usize;
         if let Some(ref c) = content {
@@ -102,7 +103,9 @@ pub fn log_update(
         }
         if let Some(ref p) = project_key {
             stmt.raw_bind_parameter(idx, p).map_err(|e| e.to_string())?;
+            idx += 1;
         }
+        stmt.raw_bind_parameter(idx, entry_id).map_err(|e| e.to_string())?;
         stmt.raw_execute().map_err(|e| e.to_string())?;
     }
     log_get(db_path, entry_id)
@@ -176,9 +179,9 @@ pub fn log_get_range(
 pub fn log_search(db_path: String, query: String, limit: Option<i64>) -> Result<Vec<LogEntry>, String> {
     let conn = get_connection(&db_path).map_err(|e| e.to_string())?;
     let lim = limit.unwrap_or(50);
-    let pattern = format!("%{}%", query);
+    let pattern = format!("%{}%", escape_like(&query));
     let mut stmt = conn
-        .prepare("SELECT * FROM log_entries WHERE content LIKE ?1 ORDER BY date DESC, created_at DESC LIMIT ?2")
+        .prepare("SELECT * FROM log_entries WHERE content LIKE ?1 ESCAPE '\\' ORDER BY date DESC, created_at DESC LIMIT ?2")
         .map_err(|e| e.to_string())?;
     let rows = stmt
         .query_map(params![pattern, lim], |row| row_to_log(row))
@@ -217,13 +220,13 @@ pub fn global_search(
     }
     let conn = get_connection(&db_path).map_err(|e| e.to_string())?;
     let lim = limit.unwrap_or(20);
-    let pattern = format!("%{}%", trimmed);
+    let pattern = format!("%{}%", escape_like(trimmed));
     let mut hits: Vec<SearchHit> = Vec::new();
 
     // log_entries.content
     {
         let mut stmt = conn
-            .prepare("SELECT id, content, date FROM log_entries WHERE content LIKE ?1 ORDER BY date DESC, created_at DESC LIMIT ?2")
+            .prepare("SELECT id, content, date FROM log_entries WHERE content LIKE ?1 ESCAPE '\\' ORDER BY date DESC, created_at DESC LIMIT ?2")
             .map_err(|e| e.to_string())?;
         let rows = stmt
             .query_map(params![pattern, lim], |row| {
@@ -248,7 +251,7 @@ pub fn global_search(
     // todos.title / todos.context
     {
         let mut stmt = conn
-            .prepare("SELECT id, title, context, created_at FROM todos WHERE title LIKE ?1 OR context LIKE ?1 ORDER BY created_at DESC LIMIT ?2")
+            .prepare("SELECT id, title, context, created_at FROM todos WHERE title LIKE ?1 ESCAPE '\\' OR context LIKE ?1 ESCAPE '\\' ORDER BY created_at DESC LIMIT ?2")
             .map_err(|e| e.to_string())?;
         let rows = stmt
             .query_map(params![pattern, lim], |row| {
@@ -274,7 +277,7 @@ pub fn global_search(
     // todo_notes.content
     {
         let mut stmt = conn
-            .prepare("SELECT id, todo_id, content, created_at FROM todo_notes WHERE content LIKE ?1 ORDER BY created_at DESC LIMIT ?2")
+            .prepare("SELECT id, todo_id, content, created_at FROM todo_notes WHERE content LIKE ?1 ESCAPE '\\' ORDER BY created_at DESC LIMIT ?2")
             .map_err(|e| e.to_string())?;
         let rows = stmt
             .query_map(params![pattern, lim], |row| {
@@ -300,7 +303,7 @@ pub fn global_search(
     // sub_todos.title
     {
         let mut stmt = conn
-            .prepare("SELECT id, todo_id, title, created_at FROM sub_todos WHERE title LIKE ?1 ORDER BY created_at DESC LIMIT ?2")
+            .prepare("SELECT id, todo_id, title, created_at FROM sub_todos WHERE title LIKE ?1 ESCAPE '\\' ORDER BY created_at DESC LIMIT ?2")
             .map_err(|e| e.to_string())?;
         let rows = stmt
             .query_map(params![pattern, lim], |row| {
