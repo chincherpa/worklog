@@ -70,8 +70,8 @@ export const api = {
   // Session
   sessionStart: (dbPath: string, todoId: number, timerPreset?: string) =>
     invoke<FocusSession>('session_start', { dbPath, todoId, timerPreset }),
-  sessionEnd: (dbPath: string, sessionId: number, outcome: string, logEntry?: string) =>
-    invoke<FocusSession>('session_end', { dbPath, sessionId, outcome, logEntry }),
+  sessionEnd: (dbPath: string, sessionId: number, outcome: string, logEntry?: string, elapsedS?: number) =>
+    invoke<FocusSession>('session_end', { dbPath, sessionId, outcome, logEntry, elapsedS }),
   sessionGet: (dbPath: string, sessionId: number) =>
     invoke<FocusSession>('session_get', { dbPath, sessionId }),
   sessionGetActive: (dbPath: string) =>

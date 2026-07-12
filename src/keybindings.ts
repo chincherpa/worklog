@@ -8,6 +8,7 @@ export type ActionName =
   | 'startFocus'
   | 'editEntry'
   | 'changeTag'
+  | 'toggleResolved'
   | 'refreshAll'
   | 'quit'
   | 'toggleContent'
@@ -54,6 +55,7 @@ export const ACTION_LABELS: Record<ActionName, string> = {
   startFocus: 'Start / Stop focus session',
   editEntry: 'Edit entry',
   changeTag: 'Change entry tag',
+  toggleResolved: 'Toggle block resolved',
   refreshAll: 'Reload all',
   quit: 'Quit',
   toggleContent: 'Toggle content panel',
@@ -127,6 +129,8 @@ export const DEFAULT_BINDINGS: Record<string, ActionName> = {
   R: 'refreshAll',
   t: 'toggleTodo',
   T: 'toggleTodo',
+  u: 'toggleResolved',
+  U: 'toggleResolved',
   Tab: 'cyclePanel',
   v: 'viewLatest',
   V: 'viewLatest',

@@ -47,29 +47,40 @@ pub fn migrate(db_path: &str) -> Result<i64, String> {
         (10, MIGRATION_10),
     ];
 
+    // Table rebuilds in migrations 3/4 need FK enforcement off; toggle it once for
+    // the whole migration run (PRAGMA foreign_keys is a no-op inside a transaction).
+    conn.execute_batch("PRAGMA foreign_keys=OFF;").map_err(|e| e.to_string())?;
+
     for (version, sql) in migrations {
         if *version <= current {
             continue;
         }
+        // Each migration is atomic: its statements and the schema_version bump
+        // commit together, so an interrupted run never advances the version past a
+        // half-applied migration (which previously made the app fail to start).
+        let tx = conn.unchecked_transaction().map_err(|e| e.to_string())?;
         if *version == 7 {
-            add_column_if_missing(&conn, "todos", "tags", "TEXT").map_err(|e| e.to_string())?;
+            add_column_if_missing(&tx, "todos", "tags", "TEXT").map_err(|e| e.to_string())?;
         } else if *version == 8 {
-            add_column_if_missing(&conn, "log_entries", "project", "TEXT NOT NULL DEFAULT 'work'").map_err(|e| e.to_string())?;
+            add_column_if_missing(&tx, "log_entries", "project", "TEXT NOT NULL DEFAULT 'work'").map_err(|e| e.to_string())?;
         } else if *version == 9 {
-            add_column_if_missing(&conn, "todos", "sort_order", "INTEGER NOT NULL DEFAULT 0").map_err(|e| e.to_string())?;
-            backfill_todo_sort_order(&conn).map_err(|e| e.to_string())?;
+            add_column_if_missing(&tx, "todos", "sort_order", "INTEGER NOT NULL DEFAULT 0").map_err(|e| e.to_string())?;
+            backfill_todo_sort_order(&tx).map_err(|e| e.to_string())?;
         } else if *version == 10 {
-            add_column_if_missing(&conn, "todos", "scheduled_at", "TEXT").map_err(|e| e.to_string())?;
-            add_column_if_missing(&conn, "todos", "est_duration_min", "INTEGER").map_err(|e| e.to_string())?;
+            add_column_if_missing(&tx, "todos", "scheduled_at", "TEXT").map_err(|e| e.to_string())?;
+            add_column_if_missing(&tx, "todos", "est_duration_min", "INTEGER").map_err(|e| e.to_string())?;
         } else {
-            exec_migration_sql(&conn, sql).map_err(|e| e.to_string())?;
+            exec_migration_sql(&tx, sql).map_err(|e| e.to_string())?;
         }
-        conn.execute(
+        tx.execute(
             "INSERT INTO schema_version (version) VALUES (?1)",
             rusqlite::params![version],
         )
         .map_err(|e| e.to_string())?;
+        tx.commit().map_err(|e| e.to_string())?;
     }
+
+    conn.execute_batch("PRAGMA foreign_keys=ON;").map_err(|e| e.to_string())?;
 
     let new_version: i64 = conn
         .query_row(
@@ -211,8 +222,9 @@ const MIGRATION_2: &str = r#"
     CREATE UNIQUE INDEX IF NOT EXISTS idx_one_active_session ON focus_sessions((1)) WHERE ended_at IS NULL
 "#;
 
+// FK enforcement is toggled off around the whole migration run (see migrate()),
+// so the table rebuild here needs no PRAGMA of its own.
 const MIGRATION_3: &str = r#"
-    PRAGMA foreign_keys=OFF;
     CREATE TABLE todos_new (
         id          INTEGER PRIMARY KEY AUTOINCREMENT,
         title       TEXT    NOT NULL,
@@ -231,12 +243,10 @@ const MIGRATION_3: &str = r#"
     DROP TABLE IF EXISTS todos;
     ALTER TABLE todos_new RENAME TO todos;
     CREATE INDEX IF NOT EXISTS idx_todo_status ON todos(status);
-    CREATE INDEX IF NOT EXISTS idx_todo_mode   ON todos(mode);
-    PRAGMA foreign_keys=ON
+    CREATE INDEX IF NOT EXISTS idx_todo_mode   ON todos(mode)
 "#;
 
 const MIGRATION_4: &str = r#"
-    PRAGMA foreign_keys=OFF;
     CREATE TABLE todos_new (
         id          INTEGER PRIMARY KEY AUTOINCREMENT,
         title       TEXT    NOT NULL,
@@ -255,10 +265,12 @@ const MIGRATION_4: &str = r#"
     DROP TABLE IF EXISTS todos;
     ALTER TABLE todos_new RENAME TO todos;
     CREATE INDEX IF NOT EXISTS idx_todo_status ON todos(status);
-    CREATE INDEX IF NOT EXISTS idx_todo_mode   ON todos(mode);
-    PRAGMA foreign_keys=ON
+    CREATE INDEX IF NOT EXISTS idx_todo_mode   ON todos(mode)
 "#;
 
+// MIGRATION_5 and MIGRATION_6 are intentionally identical: both create the
+// sub_todos table. MIGRATION_6 is a harmless re-run (all statements use
+// IF NOT EXISTS) kept for schema-version continuity across older binaries.
 const MIGRATION_5: &str = r#"
     CREATE TABLE IF NOT EXISTS sub_todos (
         id          INTEGER PRIMARY KEY AUTOINCREMENT,

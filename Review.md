@@ -2,6 +2,22 @@
 
 **Datum:** 2026-07-10 · **Stand:** `master` / `claude/code-review-npkdv3` (identisch) · **Umfang:** gesamte Codebase (React/TypeScript-Frontend, Rust-Backend, SQLite)
 
+---
+
+## Status der Umsetzung
+
+**Behoben** (alle in einem Folge-Commit): H1, H2, H3, M1, M2, M3, M4, M5, M6, M7, M8, G1, G2, G3, G4, G5, G6, G7, G8 sowie die billigen Hinweise (toter Code `elapsedSeconds` entfernt, freundliche Fehlermeldung bei Session-Konflikt in `session_start`).
+
+- **H2** wurde per neuer `toml_edit`-Abhängigkeit gelöst: `write_config` ersetzt nur noch die Sektionen `[tags]`/`[projects]`/`[keybindings]` in-place; `[schedule]`, Kommentare und ein relatives `db_path` bleiben erhalten.
+- **M2** umfasst Query-Fix + neue Keybinding-Action `toggleResolved` (Taste `u`) und durchgestrichene Darstellung erledigter Blocker in `LogEntryRow`.
+- **M6** gibt `session_end` einen optionalen `elapsed_s`-Parameter (Pausen zählen nicht mehr mit).
+
+**Bewusst offen gelassen:** G9 (Pagination — größerer Umbau) sowie die strukturellen Hinweise ohne Migration/Umbau (`schema_version`-PK, DST-Linearität im GanttDialog, `exec_migration_sql`-`;`-Split, deaktivierte CSP, ungenutzte `mode`-Spalten) — bleiben als dokumentierte Hinweise unten stehen.
+
+**Verifikation der Fixes:** `tsc --noEmit` ✓ und `cargo check` ✓ (beide fehlerfrei; GTK-Bibliotheken für den Rust-Build wurden in der Umgebung nachinstalliert).
+
+---
+
 ## Zusammenfassung
 
 Die Codebase ist insgesamt in gutem Zustand: klare Modultrennung (ein Command-File pro Domäne, ein zentraler State-Hook), konsequentes Parameter-Binding in fast allen SQL-Queries, durchdachte Details wie der partielle Unique-Index für „nur eine aktive Focus-Session" und die Lane-Packung im Gantt-Dialog. Der TypeScript-Typecheck (`tsc --noEmit`) läuft fehlerfrei durch. `cargo check` konnte in der Review-Umgebung nicht ausgeführt werden (fehlende GTK-Systembibliotheken im Linux-Container — kein Code-Problem).

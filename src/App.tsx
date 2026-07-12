@@ -127,9 +127,12 @@ export default function App() {
     setDialog({ type: 'none' })
   }, [])
 
-  // Global keyboard handler
+  // Global keyboard handler. Kept in a ref that is refreshed every render so the
+  // window listener can be registered a single time (below) instead of being torn
+  // down and re-attached on every state change.
+  const keydownRef = useRef<(e: KeyboardEvent) => void>(() => {})
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
+    keydownRef.current = (e: KeyboardEvent) => {
       // Ignore when typing in dialog inputs — dialogs handle their own keys
       if (app.dialogOpen) return
 
@@ -154,9 +157,12 @@ export default function App() {
       e.preventDefault()
       handleAction(action)
     }
-    window.addEventListener('keydown', handler)
-    return () => window.removeEventListener('keydown', handler)
-  }, [app.dialogOpen, app.inputFocused, app, dialog])
+  })
+  useEffect(() => {
+    const listener = (e: KeyboardEvent) => keydownRef.current(e)
+    window.addEventListener('keydown', listener)
+    return () => window.removeEventListener('keydown', listener)
+  }, [])
 
   const handleAction = useCallback(async (action: string) => {
     const { dbPath, todos, todoIdx, displayedEntryId, logEntries, activeSession, config } = app
@@ -293,15 +299,13 @@ export default function App() {
             const separator = subtodos.length > 0 ? '\n\n---\n\n' : '\n\n'
             content += separator + notes.map(n => n.content).join('\n\n')
           }
-          let projectKey: string | undefined = todo.context ?? undefined
-          if (projectKey && config) {
-            const exists = config.projects.some(p => p.key === projectKey)
-            if (!exists) {
-              const newProject: Project = { key: projectKey, symbol: '📁', name: projectKey, color: '#D0D0D0' }
-              await api.saveProjects(config.config_path, [...config.projects, newProject])
-              app.setConfig(await api.getConfig(config.config_path))
-            }
-          }
+          // Only tag the entry with a project when the context exactly matches an
+          // existing project key. Context is a free-text field, so we must not turn
+          // arbitrary text into a new project (that would also rewrite config.toml).
+          const projectKey =
+            todo.context && config?.projects.some(p => p.key === todo.context)
+              ? todo.context
+              : undefined
           const newEntry = await api.logAdd(dbPath, 'done', content, projectKey, todo.id)
           newEntryId = newEntry.id
         }
@@ -367,6 +371,16 @@ export default function App() {
       case 'changeTag': {
         const entry = logEntries.find(e => e.id === displayedEntryId)
         if (entry) openDialog({ type: 'tagSelect' })
+        break
+      }
+
+      case 'toggleResolved': {
+        const entry = logEntries.find(e => e.id === displayedEntryId)
+        if (!entry || !dbPath) break
+        const next = entry.resolved ? 0 : 1
+        await api.logUpdate(dbPath, entry.id, undefined, undefined, next)
+        await app.loadLog()
+        showToast(next ? 'Block resolved' : 'Block reopened', next ? 'success' : 'info')
         break
       }
 
@@ -510,11 +524,13 @@ export default function App() {
     setFocusPause(PAUSE_NONE)
     if (!app.dbPath || !app.activeSession) return
     const outcome = result?.outcome ?? dialog.debriefOutcome ?? 'open'
-    await api.sessionEnd(app.dbPath, app.activeSession.id, outcome, result?.log_entry)
-    if (result?.log_entry && app.todos[app.todoIdx]) {
-      const todo = app.todos[app.todoIdx]
+    // Attribute everything to the session's todo, not whatever is selected now
+    // (the todo selection can change while the session is minimized).
+    const sessionTodo = app.todos.find(t => t.id === app.activeSession!.todo_id) ?? null
+    await api.sessionEnd(app.dbPath, app.activeSession.id, outcome, result?.log_entry, dialog.debriefDurationS)
+    if (result?.log_entry && sessionTodo) {
       const tagKey = outcome === 'solved' ? 'done' : outcome === 'blocked' ? 'block' : 'note'
-      await api.logAdd(app.dbPath, tagKey, `${todo.title}\n${result.log_entry}`, undefined, todo.id)
+      await api.logAdd(app.dbPath, tagKey, `${sessionTodo.title}\n${result.log_entry}`, undefined, sessionTodo.id)
     }
     await app.loadAll()
     showToast('Session ended', 'info')
@@ -574,6 +590,10 @@ export default function App() {
 
   const displayedEntry = app.logEntries.find(e => e.id === app.displayedEntryId)
   const selectedTodo = app.todos[app.todoIdx] ?? null
+  // The todo the active session belongs to (may differ from the selected one).
+  const sessionTodo = app.activeSession
+    ? app.todos.find(t => t.id === app.activeSession!.todo_id) ?? null
+    : null
   const allTags = app.config?.tags ?? []
   const allProjects = app.config?.projects ?? []
 
@@ -744,7 +764,7 @@ export default function App() {
 
       <DebriefingDialog
         open={dialog.type === 'debrief'}
-        todo={selectedTodo}
+        todo={sessionTodo ?? selectedTodo}
         durationS={dialog.debriefDurationS ?? 0}
         initialOutcome={dialog.debriefOutcome}
         onClose={handleDebriefResult}

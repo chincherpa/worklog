@@ -56,6 +56,8 @@ export default function FocusDialog({ open, todo, session, dbPath, onClose, paus
   useEffect(() => {
     if (!open) return
     const handler = (e: KeyboardEvent) => {
+      // Don't hijack keys while typing in the note / sub-todo fields.
+      if ((e.target as HTMLElement).tagName === 'INPUT') return
       if (e.key === 'Escape') handleMinimize()
       if (e.key === 'p' || e.key === 'P') onPauseToggle()
     }

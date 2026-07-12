@@ -171,10 +171,10 @@ pub fn week_summary(db_path: String, iso_week: String) -> Result<WeekSummary, St
         )
         .unwrap_or(0);
 
-    // Open blocks
+    // Open blocks — resolved blockers no longer count.
     let open_blocks: i64 = conn
         .query_row(
-            "SELECT COUNT(*) FROM log_entries WHERE date BETWEEN ?1 AND ?2 AND tag_key = 'block'",
+            "SELECT COUNT(*) FROM log_entries WHERE date BETWEEN ?1 AND ?2 AND tag_key = 'block' AND resolved = 0",
             params![date_from, date_to],
             |row| row.get(0),
         )

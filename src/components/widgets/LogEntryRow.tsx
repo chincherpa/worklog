@@ -14,6 +14,7 @@ interface Props {
 export default function LogEntryRow({ entry, tag, project, selected, onClick }: Props) {
   const ref = useRef<HTMLDivElement>(null)
   const hasBody = entry.content.includes('\n') && entry.content.split('\n').filter(l => l.trim()).length > 1
+  const isResolved = entry.resolved !== 0
 
   useLayoutEffect(() => {
     if (selected && ref.current) {
@@ -73,14 +74,15 @@ export default function LogEntryRow({ entry, tag, project, selected, onClick }: 
         </span>
       )}
       <span style={{
-        color: TEXT_PRIMARY,
+        color: isResolved ? TEXT_DIM : TEXT_PRIMARY,
         fontSize: 12,
         overflow: 'hidden',
         textOverflow: 'ellipsis',
         whiteSpace: 'nowrap',
         flex: 1,
+        textDecoration: isResolved ? 'line-through' : 'none',
       }}>
-        {firstLine(entry.content)}
+        {isResolved && '✓ '}{firstLine(entry.content)}
       </span>
       {hasBody && <span style={{ color: TEXT_DIM, fontSize: 11, flexShrink: 0 }}>📄</span>}
     </div>

@@ -1,4 +1,5 @@
 use crate::db::{get_connection, now_str};
+use crate::commands::log::escape_like;
 use crate::models::Todo;
 use rusqlite::params;
 
@@ -155,16 +156,18 @@ pub fn todo_update(
     }
 
     if !parts.is_empty() {
+        // The id is bound as the final parameter (never interpolated).
         let sql = format!(
-            "UPDATE todos SET {} WHERE id = {}",
-            parts.join(", "),
-            todo_id
+            "UPDATE todos SET {} WHERE id = ?",
+            parts.join(", ")
         );
         let mut stmt = conn.prepare(&sql).map_err(|e| e.to_string())?;
         for (i, val) in bind.iter().enumerate() {
             stmt.raw_bind_parameter(i + 1, val.as_ref())
                 .map_err(|e| e.to_string())?;
         }
+        stmt.raw_bind_parameter(bind.len() + 1, todo_id)
+            .map_err(|e| e.to_string())?;
         stmt.raw_execute().map_err(|e| e.to_string())?;
     }
 
@@ -206,16 +209,20 @@ pub fn todo_reorder(db_path: String, todo_id: i64, direction: i64) -> Result<Vec
         if target >= 0 && (target as usize) < active.len() {
             let (a_id, a_order) = active[idx];
             let (b_id, b_order) = active[target as usize];
-            conn.execute(
+            // Swap both sort_order values atomically so an interrupted reorder
+            // can't leave two rows sharing the same sort_order.
+            let tx = conn.unchecked_transaction().map_err(|e| e.to_string())?;
+            tx.execute(
                 "UPDATE todos SET sort_order = ?1 WHERE id = ?2",
                 params![b_order, a_id],
             )
             .map_err(|e| e.to_string())?;
-            conn.execute(
+            tx.execute(
                 "UPDATE todos SET sort_order = ?1 WHERE id = ?2",
                 params![a_order, b_id],
             )
             .map_err(|e| e.to_string())?;
+            tx.commit().map_err(|e| e.to_string())?;
         }
     }
 
@@ -226,9 +233,9 @@ pub fn todo_reorder(db_path: String, todo_id: i64, direction: i64) -> Result<Vec
 pub fn todo_search(db_path: String, query: String, limit: Option<i64>) -> Result<Vec<Todo>, String> {
     let conn = get_connection(&db_path).map_err(|e| e.to_string())?;
     let lim = limit.unwrap_or(20);
-    let pattern = format!("%{}%", query);
+    let pattern = format!("%{}%", escape_like(&query));
     let sql = format!(
-        r#"{} WHERE t.title LIKE ?1 OR t.context LIKE ?2 GROUP BY t.id ORDER BY t.created_at DESC LIMIT ?3"#,
+        r#"{} WHERE t.title LIKE ?1 ESCAPE '\' OR t.context LIKE ?2 ESCAPE '\' GROUP BY t.id ORDER BY t.created_at DESC LIMIT ?3"#,
         TODO_SELECT_WITH_STATS
     );
     let mut stmt = conn.prepare(&sql).map_err(|e| e.to_string())?;

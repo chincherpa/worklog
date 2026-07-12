@@ -42,8 +42,11 @@ pub fn git_push_db(db_path: String, app_handle: tauri::AppHandle) -> Result<(), 
         .map_err(|e| format!("git commit failed: {e}"))?;
 
     if !commit.status.success() {
-        let stderr = String::from_utf8_lossy(&commit.stderr).to_string();
-        if stderr.contains("nothing to commit") {
+        // git prints "nothing to commit" to stdout (with a non-zero exit code),
+        // so check both streams before treating it as an error.
+        let stdout = String::from_utf8_lossy(&commit.stdout);
+        let stderr = String::from_utf8_lossy(&commit.stderr);
+        if stdout.contains("nothing to commit") || stderr.contains("nothing to commit") {
             emit(&app_handle, "git://progress", "Nothing to commit");
             return Ok(());
         }

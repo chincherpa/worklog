@@ -35,14 +35,6 @@ struct EntryOut {
     bg_color: Option<String>,
 }
 
-#[derive(Serialize)]
-struct ConfigOut {
-    db_path: String,
-    tags: IndexMap<String, EntryOut>,
-    projects: IndexMap<String, EntryOut>,
-    #[serde(skip_serializing_if = "IndexMap::is_empty")]
-    keybindings: IndexMap<String, Vec<String>>,
-}
 
 #[tauri::command]
 pub fn get_config(config_path: Option<String>) -> Result<AppConfig, String> {
@@ -85,19 +77,58 @@ fn keybindings_to_map(keybindings: &[crate::app_config::Keybinding]) -> IndexMap
         .collect()
 }
 
+/// Build a `[section]` table (with `[section.key]` sub-tables) from an entry map.
+fn build_entry_table(entries: &IndexMap<String, EntryOut>) -> toml_edit::Item {
+    use toml_edit::{value, Item, Table};
+    let mut table = Table::new();
+    for (key, e) in entries {
+        let mut t = Table::new();
+        t["symbol"] = value(e.symbol.as_str());
+        t["name"] = value(e.name.as_str());
+        t["color"] = value(e.color.as_str());
+        if let Some(bg) = &e.bg_color {
+            t["bg_color"] = value(bg.as_str());
+        }
+        table.insert(key, Item::Table(t));
+    }
+    Item::Table(table)
+}
+
+/// Rewrite only the `[tags]`, `[projects]` and `[keybindings]` sections in place,
+/// preserving everything else in the file — `db_path`, `[schedule]`, comments and
+/// formatting. `db_path` is deliberately left untouched so a relative path stays
+/// relative (and portable).
 fn write_config(
     config_path: &str,
-    db_path: String,
     tags: IndexMap<String, EntryOut>,
     projects: IndexMap<String, EntryOut>,
     keybindings: IndexMap<String, Vec<String>>,
 ) -> Result<(), String> {
-    let config_out = ConfigOut { db_path, tags, projects, keybindings };
+    use toml_edit::{Array, DocumentMut, Item, Table, Value};
 
-    let toml_str = toml::to_string_pretty(&config_out)
-        .map_err(|e| format!("TOML serialization failed: {e}"))?;
+    let existing = std::fs::read_to_string(config_path).unwrap_or_default();
+    let mut doc: DocumentMut = existing
+        .parse()
+        .map_err(|e| format!("Invalid TOML: {e}"))?;
 
-    std::fs::write(config_path, toml_str)
+    doc["tags"] = build_entry_table(&tags);
+    doc["projects"] = build_entry_table(&projects);
+
+    if keybindings.is_empty() {
+        doc.as_table_mut().remove("keybindings");
+    } else {
+        let mut kb = Table::new();
+        for (action, keys) in &keybindings {
+            let mut arr = Array::new();
+            for k in keys {
+                arr.push(k.as_str());
+            }
+            kb[action.as_str()] = Item::Value(Value::Array(arr));
+        }
+        doc["keybindings"] = Item::Table(kb);
+    }
+
+    std::fs::write(config_path, doc.to_string())
         .map_err(|e| format!("Cannot write config: {e}"))?;
 
     Ok(())
@@ -120,7 +151,7 @@ pub fn save_tags(config_path: String, tags: Vec<TagInput>) -> Result<(), String>
     let projects_map = projects_to_map(&current.projects);
     let keybindings_map = keybindings_to_map(&current.keybindings);
 
-    write_config(&config_path, current.db_path, tags_map, projects_map, keybindings_map)
+    write_config(&config_path, tags_map, projects_map, keybindings_map)
 }
 
 #[tauri::command]
@@ -161,7 +192,7 @@ pub fn save_projects(config_path: String, projects: Vec<ProjectInput>) -> Result
 
     let keybindings_map = keybindings_to_map(&current.keybindings);
 
-    write_config(&config_path, current.db_path, tags_map, projects_map, keybindings_map)
+    write_config(&config_path, tags_map, projects_map, keybindings_map)
 }
 
 #[tauri::command]
@@ -178,5 +209,5 @@ pub fn save_keybindings(config_path: String, keybindings: Vec<KeybindingInput>) 
         }
     }
 
-    write_config(&config_path, current.db_path, tags_map, projects_map, keybindings_map)
+    write_config(&config_path, tags_map, projects_map, keybindings_map)
 }
